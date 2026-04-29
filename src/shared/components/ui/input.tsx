@@ -1,19 +1,14 @@
-import * as React from "react"
-import { cn } from "@/shared/lib/utils/index"
-import { Eye, EyeOff } from "lucide-react"
+import * as React from "react";
+import { cn } from "@/shared/lib/utils";
+import { Eye, EyeOff } from "lucide-react";
 
 type InputProps = React.ComponentProps<"input"> & {
-  error?: string
-}
+  error?: string;
+};
 
-function Input({
-  className,
-  type,
-  error,
-  ...props
-}: InputProps) {
-  const [show, setShow] = React.useState(false)
-  const isPassword = type === "password"
+function Input({ className, type, error, ...props }: InputProps) {
+  const [show, setShow] = React.useState(false);
+  const isPassword = type === "password";
 
   const input = (
     <input
@@ -35,11 +30,11 @@ function Input({
         "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
 
         "md:text-sm dark:bg-input/30",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 
   return (
     <div className="w-full space-y-1">
@@ -55,22 +50,16 @@ function Input({
             tabIndex={-1}
             aria-label="Toggle password visibility"
           >
-            {show ? (
-              <EyeOff size={20} />
-            ) : (
-              <Eye size={20} />
-            )}
+            {show ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
         )}
       </div>
 
       {error && (
-        <p className="text-xs text-destructive text-right">
-          {error}
-        </p>
+        <p className="text-xs text-destructive text-right">* {error}</p>
       )}
     </div>
-  )
+  );
 }
 
-export { Input }
+export { Input };
