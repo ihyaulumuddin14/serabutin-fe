@@ -22,3 +22,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Test reports
+coverage
+.nyc_output
+
+# Vite
+.vite-node/
+
+# Test Snapshots
+*.test.js.snap
+*.test.ts.snap
+*.test.jsx.snap
+*.test.tsx.snap
+
+db.json

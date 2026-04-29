@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "radix-ui"
+import { Icon } from "@iconify/react";
 
 import { cn } from "../../lib/utils"
 
@@ -22,7 +23,7 @@ const buttonVariants = cva(
       },
       size: {
         default:
-          "h-9 gap-1.5 px-2.5 in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+          "h-9 gap-1.5 p-3.5 in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),8px)] px-2 text-xs in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-8 gap-1 rounded-[min(var(--radius-md),10px)] px-2.5 in-data-[slot=button-group]:rounded-md has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5",
         lg: "h-11 gap-1.5 rounded-[10px] px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 font-semibold",
@@ -46,10 +47,14 @@ function Button({
   variant = "default",
   size = "default",
   asChild = false,
+  isLoading = false,
+  disabled,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    isLoading?: boolean
   }) {
   const Comp = asChild ? Slot.Root : "button"
 
@@ -58,9 +63,28 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      disabled={isLoading || disabled}
+      className={cn(
+        buttonVariants({ variant, size }),
+        "inline-flex items-center justify-center gap-2",
+        className
+      )}
       {...props}
-    />
+    >
+      {isLoading ? (
+        <Icon
+          icon="eos-icons:loading"
+          width="2em"
+          height="2em"
+          className="animate-spin"
+          style={{ color: "#fff" }}
+        />
+      ) : (
+        <>
+          {children}
+        </>
+      )}
+    </Comp>
   )
 }
 

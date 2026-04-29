@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
-import { cn } from "@/shared/lib/utils/index";
+import { cn } from "@/shared/lib/utils";
 import { Label } from "@/shared/components/ui/label";
 import { Separator } from "@/shared/components/ui/separator";
 
@@ -97,15 +97,10 @@ function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 type FieldLabelProps = React.ComponentProps<typeof Label> & {
-  icon?: React.ReactNode
-}
+  icon?: React.ReactNode;
+};
 
-function FieldLabel({
-  className,
-  icon,
-  children,
-  ...props
-}: FieldLabelProps) {
+function FieldLabel({ className, icon, children, ...props }: FieldLabelProps) {
   return (
     <Label
       data-slot="field-label"
@@ -117,15 +112,11 @@ function FieldLabel({
         "*:data-[slot=field]:p-3",
         "dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10",
         "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col text-sm",
-        className
+        className,
       )}
       {...props}
     >
-      {icon && (
-        <span className="flex items-center justify-center">
-          {icon}
-        </span>
-      )}
+      {icon && <span className="flex items-center justify-center">{icon}</span>}
 
       {children}
     </Label>
