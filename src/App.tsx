@@ -1,14 +1,14 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import './App.css'
+import InitAuth from "./features/auth/components/InitAuth"
+import ProtectedRoute from "./features/auth/components/ProtectedRoute"
 import LoginPage from './features/auth/pages/LoginPage'
 import RegisterPage from './features/auth/pages/RegisterPage'
+import VerifyPage from "./features/auth/pages/VerifyPage"
 import { Toaster } from './shared/components/ui/sonner'
 import AuthLayout from './shared/layouts/AuthLayout'
-import VerifyPage from "./features/auth/pages/VerifyPage"
 import JobsLayout from "./shared/layouts/JobsLayout"
-import ProtectedRoute from "./features/auth/components/ProtectedRoute"
-import InitAuth from "./features/auth/components/InitAuth"
 import { queryClient } from "./shared/lib/queryClient"
 
 function App() {
