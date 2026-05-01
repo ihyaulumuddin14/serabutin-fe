@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { toast } from "sonner";
-import { loginUser, registerUser, verifyUser } from "../services/authServices";
+import { loginUser, logoutUser, registerUser, verifyUser } from "../services/authServices";
 import privateApi from "@/shared/api/axiosInstance";
 import { useNavigate } from "react-router";
 import { useAuthStore } from "../stores/authStores";
@@ -34,16 +34,16 @@ export const useLogin = () => {
       toast.success(data.message || "Login berhasil");
       
       // Set access token to axios instance for authenticated requests
-      const accessToken = data.accessToken;
+      const accessToken = data.data.accessToken;
       privateApi.defaults.headers.common["Authorization"] =
         `Bearer ${accessToken}`;
 
       // optimistic ui
       queryClient.setQueryData(["me"], (old) => ({
         ...(old ?? {}),
-        user: data.user
+        user: data.data.user
       }));
-      setAuth(data.user.role, true);
+      setAuth(data.data.user.role, true);
     },
     onError: (error) => {
       toast.error(
@@ -87,13 +87,12 @@ export const useLogout = () => {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: async () => {
-      // Clear access token from axios instance
+    mutationFn: logoutUser,
+    onSuccess: () => {
       queryClient.clear();
       privateApi.defaults.headers.common["Authorization"] = undefined;
       logout();
-    },
-    onSuccess: () => {
+
       navigate("/", { replace: true });
       toast.dismiss();
       toast.success("Logout berhasil");
