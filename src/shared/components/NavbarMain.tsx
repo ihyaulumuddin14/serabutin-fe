@@ -1,11 +1,11 @@
-import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/shared/components/ui/navigation-menu'
+import { useLogout } from '@/features/auth/hooks/authHooks';
 import { useMe } from "@/features/user/hooks/userHooks";
-import { Button } from "./ui/button";
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/shared/components/ui/navigation-menu';
+import { useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import Skeleton from "./Skeleton";
-import { useMemo } from "react";
+import { Button } from "./ui/button";
 import { Separator } from './ui/separator';
-import { useLogout } from '@/features/auth/hooks/authHooks';
 
 const NavbarMain = () => {
   const { user, isPending } = useMe();
@@ -41,7 +41,7 @@ export default NavbarMain;
 
 const ProfileDropdown = () => {
   const navigate = useNavigate();
-  const { mutate: logoutMutate } = useLogout();
+  const { mutate: logoutMutate, isPending: isLogoutPending } = useLogout();
   const { user, profile } = useMe();
   const initials = useMemo(() => {
     return user ? user.fullName.split(" ").map((n) => n[0]).join("") : "";
@@ -72,7 +72,7 @@ const ProfileDropdown = () => {
             </div>
             <Separator className="inset-0" />
             <NavigationMenuLink onClick={() => logoutMutate()} className="w-full text-center cursor-pointer hover:text-destructive">
-              Keluar
+              {isLogoutPending ? "Keluar..." : "Keluar"}
             </NavigationMenuLink>
           </NavigationMenuContent>
         </NavigationMenuItem>

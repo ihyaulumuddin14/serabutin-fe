@@ -11,9 +11,7 @@ export const useMe = () => {
     queryKey: ["me"],
     queryFn: getMe,
     retry: false,
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnWindowFocus: true
   });
 
   return {
