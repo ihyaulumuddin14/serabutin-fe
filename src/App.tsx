@@ -10,6 +10,8 @@ import { Toaster } from './shared/components/ui/sonner'
 import AuthLayout from './shared/layouts/AuthLayout'
 import JobsLayout from "./shared/layouts/JobsLayout"
 import { queryClient } from "./shared/lib/queryClient"
+import ProfilePage from "./features/user/pages/ProfilePage"
+import ProfileLayout from "./shared/layouts/ProfileLayout"
 
 function App() {
   return (
@@ -30,8 +32,11 @@ function App() {
               <Route index element={<h1>Jobs Page</h1>} />
             </Route>
 
-            <Route path='/profile' element={<ProtectedRoute />}>
-              <Route index element={<h1>Profile Page</h1>} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/profile" element={<ProfileLayout />}>
+                <Route index element={<ProfilePage />} />
+                <Route path=":userId" element={<ProfilePage />} />
+              </Route>
             </Route>
           </Route>
         </Routes>

@@ -80,3 +80,23 @@ export const useVerifyUser = () => {
     },
   });
 };
+
+export const useLogout = () => {
+  const queryClient = useQueryClient()
+  const { logout } = useAuthStore()
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: async () => {
+      // Clear access token from axios instance
+      queryClient.clear();
+      privateApi.defaults.headers.common["Authorization"] = undefined;
+      logout();
+    },
+    onSuccess: () => {
+      navigate("/", { replace: true });
+      toast.dismiss();
+      toast.success("Logout berhasil");
+    }
+  });
+}
