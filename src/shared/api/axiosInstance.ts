@@ -1,8 +1,6 @@
-
 import axios from "axios"
 import { refreshAccessToken } from "../helper/authRefresh"
 import { useAuthStore } from "@/features/auth/stores/authStores"
-import { queryClient } from "../lib/queryClient"
 
 export const privateApi = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -23,8 +21,7 @@ privateApi.interceptors.response.use(
 
         return privateApi(originalRequest)
       } catch (error) {
-        // clear user data and token at client and redirect to login page or jobs page
-        queryClient.clear()
+        // just reset auth store client, prevent infinite loop if refresh token also invalid/expired
         useAuthStore.getState().logout()
         return Promise.reject(error)
       }
