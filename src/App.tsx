@@ -23,7 +23,7 @@ function App() {
             <Route path='/' element={<Navigate to="/jobs" replace/>}/>
 
             <Route element={<AuthLayout />}>
-              <Route path='verify' element={<VerifyPage />}/>
+              <Route path='verify-email' element={<VerifyPage />}/>
               <Route path='register' element={<RegisterPage />}/>
               <Route path='login' element={<LoginPage />}/>
             </Route>
