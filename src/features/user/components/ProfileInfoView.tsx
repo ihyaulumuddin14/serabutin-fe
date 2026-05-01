@@ -90,7 +90,7 @@ export const ProfileInfoView = ({
       </div>
 
       {/* telephone number */}
-      {profile?.phone && (
+      {profile?.phone && user?.role === "client" && isOwnProfile && (
         <div className="flex w-full rounded-md p-3 gap-2">
           <Icon
             icon="bi:telephone-fill"

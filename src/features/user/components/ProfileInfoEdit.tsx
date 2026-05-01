@@ -13,7 +13,6 @@ import {
   Field,
   FieldGroup,
   FieldLabel,
-  FieldSeparator,
 } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import {
@@ -23,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/components/ui/select";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import ProfileImageEdit from "./ProfileImageEdit";
 
 export const ProfileInfoEdit = ({
@@ -61,10 +60,6 @@ export const ProfileInfoEdit = ({
     return selectedRegency?.kode;
   }, [regencies, cityValue]);
 
-  useEffect(() => {
-    setValue("locationDistrict", null);
-  }, [cityValue, setValue]);
-
   const { data: districts } = useDistricts(regencyId || "");
 
   const onSubmit = (data: EditProfileSchema) => {
@@ -98,17 +93,24 @@ export const ProfileInfoEdit = ({
               error={errors.bio?.message}
             />
           </Field>
-          <Field>
-            <FieldLabel>Nomor Telepon</FieldLabel>
-            <Input
-              {...register("phone")}
-              error={errors.phone?.message}
-            />
-          </Field>
+          {user?.role === "client" && (
+            <Field>
+              <FieldLabel>Nomor Telepon</FieldLabel>
+              <Input
+                {...register("phone")}
+                error={errors.phone?.message}
+              />
+            </Field>
+          )}
           <Field>
             <FieldLabel>Kota/Kabupaten</FieldLabel>
             <Select
-              onValueChange={(value) => setValue("locationCity", value)}
+              onValueChange={(value) => {
+                if (value !== cityValue) {
+                  setValue("locationDistrict", null);
+                }
+                setValue("locationCity", value)
+              }}
               value={cityValue ?? undefined}
             >
               <SelectTrigger>
@@ -157,7 +159,6 @@ export const ProfileInfoEdit = ({
               </p>
             )}
           </Field>
-          <FieldSeparator />
           <div className="flex gap-2">
             <Button
               className="flex-1"
