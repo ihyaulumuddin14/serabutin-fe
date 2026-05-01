@@ -15,7 +15,7 @@ export const AuthCard = ({
   children: React.ReactNode
 }) => {
   return (
-    <Card className="w-full h-full sm:h-fit max-w-110 p-5 pt-16 sm:p-9.25 flex flex-col ">
+    <Card className="w-full h-full sm:h-fit sm:max-w-110 p-5 pt-16 sm:p-9.25 flex flex-col ">
       <CardHeader className="text-center p-0!">
         <CardTitle className="flex flex-col gap-3">
           {/* title */}
