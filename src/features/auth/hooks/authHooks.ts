@@ -26,10 +26,11 @@ export const useRegister = () => {
 export const useLogin = () => {
   const queryClient = useQueryClient()
   const setAuth = useAuthStore(state => state.setAuth)
+  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: loginUser,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.dismiss();
       toast.success(data.message || "Login berhasil");
       
@@ -44,6 +45,12 @@ export const useLogin = () => {
         user: data.data.user
       }));
       setAuth(data.data.user.role, true);
+      await new Promise(res => {
+        setTimeout(() => {
+          res(null);
+          navigate("/jobs");
+        }, 1000)
+      });
     },
     onError: (error) => {
       toast.error(
