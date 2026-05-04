@@ -3,7 +3,7 @@ import { AxiosError } from "axios";
 import { toast } from "sonner";
 import { loginUser, logoutUser, registerUser, verifyUser } from "../services/authServices";
 import privateApi from "@/shared/api/axiosInstance";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useAuthStore } from "../stores/authStores";
 
 export const useRegister = () => {
@@ -27,6 +27,8 @@ export const useLogin = () => {
   const queryClient = useQueryClient()
   const setAuth = useAuthStore(state => state.setAuth)
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
 
   return useMutation({
     mutationFn: loginUser,
@@ -48,7 +50,7 @@ export const useLogin = () => {
       await new Promise(res => {
         setTimeout(() => {
           res(null);
-          navigate("/jobs");
+          navigate(callbackUrl || "/jobs");
         }, 1000)
       });
     },
