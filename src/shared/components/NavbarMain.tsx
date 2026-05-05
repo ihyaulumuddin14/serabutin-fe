@@ -27,7 +27,7 @@ const NavbarMain = () => {
         </div>
       ) : (
         <div className="flex gap-2">
-          <Button className='hidden sm:inline-block' onClick={() => navigate("/register")}>Registrasi</Button>
+          <Button className='hidden sm:inline-flex' onClick={() => navigate("/register")}>Registrasi</Button>
           <Button variant={"secondary"} onClick={() => navigate("/login")}>Masuk</Button>
         </div>
       )}
@@ -70,8 +70,15 @@ const ProfileDropdown = () => {
               <p className='text-sm font-medium'>{user?.fullName}</p>
               <p className='text-xs text-muted-foreground'>{user?.email}</p>
             </div>
-            <NavigationMenuLink>
-              <Link to="/profile" className='w-full'>Profil</Link>
+            <NavigationMenuLink
+              href="/profile"
+              onClick={(event) => {
+                event.preventDefault();
+                navigate("/profile");
+              }}
+              className="w-full"
+            >
+              Profil
             </NavigationMenuLink>
             <Separator className="inset-0" />
             <NavigationMenuLink onClick={() => logoutMutate()} className="w-full text-center cursor-pointer hover:text-destructive">
