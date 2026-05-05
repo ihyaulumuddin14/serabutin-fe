@@ -1,10 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getMe, updateProfileImage } from "../services/userServices";
 import type { Profile, User } from "@/shared/types/entity.type";
-import { type EditProfileSchema } from "../schemas/userSchemas";
-import { updateProfile } from "../services/userServices";
-import { toast } from "sonner";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
+import { toast } from "sonner";
+import { type EditProfileSchema } from "../schemas/userSchemas";
+import { getMe, getMeReviews, getReviewsByUserId, updateProfile, updateProfileImage } from "../services/userServices";
 
 export const useMe = () => {
   const { data, isPending, isError, error, isLoading } = useQuery({
@@ -58,5 +57,20 @@ export const useUploadImageProfile = () => {
           : (error as Error).message,
       );
     },
+  })
+}
+
+export const useReviews = (userId: string, page: number = 1, limit: number = 10) => {
+  return useQuery({
+    queryKey: ["reviews", userId, page],
+    queryFn: () => getReviewsByUserId(userId, page, limit),
+  });
+};
+
+export const useMeReviews = (page: number = 1, limit: number = 10) => {
+  return useQuery({
+    queryKey: ["me-reviews", page, limit],
+    queryFn: () => getMeReviews(page, limit),
+    placeholderData: keepPreviousData,
   })
 }
