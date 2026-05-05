@@ -22,12 +22,12 @@ const NavbarMain = () => {
       {/* profile or auth button */}
       {isPending ? <Skeleton /> : user ? (
         <div className="flex gap-2 font-plus items-center">
-          <p>Halo, {user.fullName.split(" ")[0]}👋</p>
+          <p className='hidden sm:block'>Halo, {user.fullName.split(" ")[0]}👋</p>
           <ProfileDropdown />
         </div>
       ) : (
         <div className="flex gap-2">
-          <Button onClick={() => navigate("/register")}>Registrasi</Button>
+          <Button className='hidden sm:inline-block' onClick={() => navigate("/register")}>Registrasi</Button>
           <Button variant={"secondary"} onClick={() => navigate("/login")}>Masuk</Button>
         </div>
       )}
@@ -61,7 +61,7 @@ const ProfileDropdown = () => {
     <NavigationMenu>
       <NavigationMenuList>
         <NavigationMenuItem>
-          <NavigationMenuTrigger onClick={() => navigate("/profile")} buttonable={false} withoutIndicator>
+          <NavigationMenuTrigger buttonable={false} withoutIndicator>
             {avatarContent}
           </NavigationMenuTrigger>
           <NavigationMenuContent className="w-full min-w-62.5">
@@ -70,6 +70,9 @@ const ProfileDropdown = () => {
               <p className='text-sm font-medium'>{user?.fullName}</p>
               <p className='text-xs text-muted-foreground'>{user?.email}</p>
             </div>
+            <NavigationMenuLink>
+              <Link to="/profile" className='w-full'>Profil</Link>
+            </NavigationMenuLink>
             <Separator className="inset-0" />
             <NavigationMenuLink onClick={() => logoutMutate()} className="w-full text-center cursor-pointer hover:text-destructive">
               {isLogoutPending ? "Keluar..." : "Keluar"}
