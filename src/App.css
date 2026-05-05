@@ -49,6 +49,10 @@
   --color-success-foreground: var(--success-foreground);
   --color-professional-surface: var(--professional-surface);
   --color-professional-foreground: var(--professional-foreground);
+  --color-warning-surface: var(--warning-surface);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-error-surface: var(--error-surface);
+  --color-error-foreground: var(--error-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -118,7 +122,12 @@
   --professional-surface: #DBEAFE;
 
   /* WARNING (rating stars / highlight) */
-  --warning: #F97316;
+  --warning-foreground: #D97706;
+  --warning-surface: #FEF3C7;
+
+  /* ERROR (badge "Banned") */
+  --error-foreground: #B91C1C;
+  --error-surface: #FEE2E2;
 
   /* CARD SHADOW (soft elevation) */
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.04);
