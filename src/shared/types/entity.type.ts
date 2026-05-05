@@ -25,3 +25,52 @@ export type Profile = {
   createdAt: string,
   updatedAt: string
 }
+
+export type Review = {
+  id: string,
+  assignmentId: string,
+  reviewer: {
+    id: string,
+    fullName: string,
+    role: Role,
+    createdAt: string,
+    updatedAt: string
+  },
+  reviewee: {
+    id: string,
+    fullName: string,
+    role: Role,
+    createdAt: string,
+    updatedAt: string
+  },
+  rating: number,
+  comment: string,
+  createdAt: string
+}
+
+export type Category = {
+  id: string,
+  name: string,
+  slug: string,
+  isActive: boolean,
+  createdAt: string,
+  updatedAt: string
+}
+
+export type Job = {
+  id: string,
+  client: Omit<User, "email" | "isVerified" | "isActive">,
+  category: Category,
+  title: string,
+  description: string,
+  budgetMin: number,
+  budgetMax: number,
+  workersNeeded: number,
+  locationDistrict: string,
+  locationCity: string,
+  status: string,
+  startAt: string,
+  deadlineAt: string,
+  createdAt: string,
+  updatedAt: string
+}
