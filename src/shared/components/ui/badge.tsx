@@ -21,7 +21,7 @@ function Badge({
     <Comp
       data-slot="badge"
       data-variant={variant}
-      className={cn(badgeVariants({ variant }), className)}
+      className={cn(badgeVariants({ variant }), "text-[10px] sm:text-xs h-fit gap-0",  className)}
       {...props}
     >
       {withDot && <span className="text-lg mr-1 -mt-0.5">•</span>}

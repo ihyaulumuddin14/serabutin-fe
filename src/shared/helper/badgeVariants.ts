@@ -17,6 +17,8 @@ export const badgeVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         professional: "bg-professional-surface text-professional-foreground [a]:hover:bg-professional-surface/80",
         success: "bg-success-surface text-success-foreground [a]:hover:bg-success-surface/80",
+        warning: "bg-warning-surface text-warning-foreground [a]:hover:bg-warning-surface/80",
+        error: "bg-error-surface text-error-foreground [a]:hover:bg-error-surface/80",
       },
     },
     defaultVariants: {
