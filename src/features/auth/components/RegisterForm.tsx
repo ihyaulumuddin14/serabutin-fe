@@ -110,26 +110,25 @@ export default function RegisterForm() {
 
         <FieldSeparator />
 
-        <Field>
-          <Button
-            size={"lg"}
-            type="submit"
-            isLoading={isPendingRegister}
-            disabled={isPendingRegister}
+        <Button
+          size={"lg"}
+          type="submit"
+          isLoading={isPendingRegister}
+          disabled={isPendingRegister}
+        >
+          Daftar Sekarang
+        </Button>
+        
+        <FieldDescription className="text-center">
+          Sudah punya akun?{" "}
+          <Link
+            replace
+            to="/login"
+            className="text-primary font-semibold no-underline!"
           >
-            Daftar Sekarang
-          </Button>
-          <FieldDescription className="text-center">
-            Sudah punya akun?{" "}
-            <Link
-              replace
-              to="/login"
-              className="text-primary font-semibold no-underline!"
-            >
-              Masuk
-            </Link>
-          </FieldDescription>
-        </Field>
+            Masuk
+          </Link>
+        </FieldDescription>
       </FieldGroup>
     </form>
   );
