@@ -3,7 +3,16 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { AxiosError } from "axios";
 import { toast } from "sonner";
 import { type EditProfileSchema } from "../schemas/userSchemas";
-import { getMe, getMeReviews, getReviewsByUserId, updateProfile, updateProfileImage } from "../services/userServices";
+import {
+  getMe,
+  getMeReviews,
+  getReviewsByUserId,
+  sendReview,
+  updateProfile,
+  updateProfileImage,
+} from "../services/userServices";
+import type { ReviewCredentials } from "../schemas/reviewSchemas";
+import type { ReviewDraft } from "../stores/reviewStores";
 
 export const useMe = () => {
   const { data, isPending, isError, error, isLoading } = useQuery({
@@ -74,3 +83,33 @@ export const useMeReviews = (page: number = 1, limit: number = 10) => {
     placeholderData: keepPreviousData,
   })
 }
+
+export const useSubmitJobReviews = () => {
+  return useMutation({
+    mutationFn: async (params: {
+        jobId: string;
+        drafts: ReviewDraft[];
+      }) => {
+        const { jobId, drafts } = params;
+
+        if (!drafts.length) return;
+
+        await Promise.all(
+          drafts.map((item) =>
+            sendReview(jobId, item as ReviewCredentials)
+          )
+        );
+      }
+    ,
+    onSuccess: () => {
+      toast.success("Ulasan berhasil dikirim");
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof AxiosError
+          ? error.response?.data?.message || "Terjadi kesalahan sistem"
+          : (error as Error).message,
+      );
+    },
+  });
+};
