@@ -23,9 +23,12 @@ export async function registerUser(data: RegisterCredentials) {
 export async function loginUser(data: LoginCredentials) {
   const convertedPayload = toSnake(data);
 
-  const response = await privateApi.post(
+  const response = await axios.post(
     `${import.meta.env.VITE_API_URL}/auth/login`,
     convertedPayload,
+    {
+      withCredentials: true,
+    }
   );
 
   if (response.data.status !== "success")
@@ -35,7 +38,7 @@ export async function loginUser(data: LoginCredentials) {
 }
 
 export async function verifyUser(token: string) {
-  const response = await axios.post(
+  const response = await axios.get(
     `${import.meta.env.VITE_API_URL}/auth/verify?token=${token}`,
   );
 
@@ -46,4 +49,13 @@ export async function verifyUser(token: string) {
     status: "success",
     message: "Email berhasil diverifikasi. Silakan login.",
   });
+}
+
+export async function logoutUser() {
+  const response = await privateApi.post("/auth/logout");
+
+  if (response.data.status !== "success")
+    throw new Error(response.data?.message || "Logout gagal");
+
+  return toCamel(response.data);
 }

@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { toast } from "sonner";
-import { loginUser, registerUser, verifyUser } from "../services/authServices";
+import { loginUser, logoutUser, registerUser, verifyUser } from "../services/authServices";
 import privateApi from "@/shared/api/axiosInstance";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useAuthStore } from "../stores/authStores";
 
 export const useRegister = () => {
@@ -26,24 +26,33 @@ export const useRegister = () => {
 export const useLogin = () => {
   const queryClient = useQueryClient()
   const setAuth = useAuthStore(state => state.setAuth)
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
 
   return useMutation({
     mutationFn: loginUser,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.dismiss();
       toast.success(data.message || "Login berhasil");
       
       // Set access token to axios instance for authenticated requests
-      const accessToken = data.accessToken;
+      const accessToken = data.data.accessToken;
       privateApi.defaults.headers.common["Authorization"] =
         `Bearer ${accessToken}`;
 
       // optimistic ui
       queryClient.setQueryData(["me"], (old) => ({
         ...(old ?? {}),
-        user: data.user
+        user: data.data.user
       }));
-      setAuth(data.user.role, true);
+      setAuth(data.data.user.role, true);
+      await new Promise(res => {
+        setTimeout(() => {
+          res(null);
+          navigate(callbackUrl || "/jobs");
+        }, 1000)
+      });
     },
     onError: (error) => {
       toast.error(
@@ -80,3 +89,22 @@ export const useVerifyUser = () => {
     },
   });
 };
+
+export const useLogout = () => {
+  const queryClient = useQueryClient()
+  const { logout } = useAuthStore()
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: logoutUser,
+    onSuccess: () => {
+      queryClient.clear();
+      privateApi.defaults.headers.common["Authorization"] = undefined;
+      logout();
+
+      navigate("/", { replace: true });
+      toast.dismiss();
+      toast.success("Logout berhasil");
+    }
+  });
+}

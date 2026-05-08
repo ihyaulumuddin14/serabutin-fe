@@ -1,4 +1,5 @@
 import type { Role } from "@/features/auth/schemas/authSchemas"
+import type { Status } from "./common.type"
 
 export type User = {
   id: string,
@@ -15,13 +16,62 @@ export type Profile = {
   id: string,
   userId: string,
   bio: string,
-  locationDistrict: string,
-  locationCity: string,
+  locationDistrict?: string,
+  locationCity?: string,
   avatarUrl: string,
   phone: string,
   avgRating: number,
   totalJobsPosted: number,
   totalJobsCompleted: number,
+  createdAt: string,
+  updatedAt: string
+}
+
+export type Review = {
+  id: string,
+  assignmentId: string,
+  reviewer: {
+    id: string,
+    fullName: string,
+    role: Role,
+    createdAt: string,
+    updatedAt: string
+  },
+  reviewee: {
+    id: string,
+    fullName: string,
+    role: Role,
+    createdAt: string,
+    updatedAt: string
+  },
+  rating: number,
+  comment: string,
+  createdAt: string
+}
+
+export type Category = {
+  id: string,
+  name: string,
+  slug: string,
+  isActive: boolean,
+  createdAt: string,
+  updatedAt: string
+}
+
+export type JobAssignment = {
+  id: string,
+  client: Omit<User, "email" | "isVerified" | "isActive">,
+  category: Category,
+  title: string,
+  description: string,
+  budgetMin: number,
+  budgetMax: number,
+  workersNeeded: number,
+  locationDistrict: string,
+  locationCity: string,
+  status: Status,
+  startAt: string,
+  deadlineAt: string,
   createdAt: string,
   updatedAt: string
 }

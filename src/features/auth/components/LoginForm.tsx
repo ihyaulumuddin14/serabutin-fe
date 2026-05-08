@@ -66,26 +66,25 @@ export default function LoginForm() {
 
         <FieldSeparator />
 
-        <Field>
-          <Button
-            isLoading={isPendingLogin}
-            disabled={isPendingLogin}
-            size={"lg"}
-            type="submit"
+        <Button
+          isLoading={isPendingLogin}
+          disabled={isPendingLogin}
+          size={"lg"}
+          type="submit"
+        >
+          Masuk
+        </Button>
+        
+        <FieldDescription className="text-center">
+          Belum punya akun?{" "}
+          <Link
+            replace
+            to="/register"
+            className="text-primary font-semibold no-underline!"
           >
-            Masuk
-          </Button>
-          <FieldDescription className="text-center">
-            Belum punya akun?{" "}
-            <Link
-              replace
-              to="/register"
-              className="text-primary font-semibold no-underline!"
-            >
-              Registrasi
-            </Link>
-          </FieldDescription>
-        </Field>
+            Registrasi
+          </Link>
+        </FieldDescription>
       </FieldGroup>
     </form>
   );
