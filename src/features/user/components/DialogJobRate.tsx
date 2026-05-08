@@ -14,15 +14,17 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Textarea } from "@/shared/components/ui/textarea";
-import type { Job, User } from "@/shared/types/entity.type";
+import type { JobAssignment, User } from "@/shared/types/entity.type";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Icon } from "@iconify-icon/react";
 import { useState } from "react";
-import { useGetWorkers } from "../hooks/clientHooks";
-import { useMe } from "../hooks/userHooks";
-import { RatingItemSkeleton } from "./skeleton/RatingItemSkeleton";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
+import { useShallow } from "zustand/react/shallow";
+import { useGetWorkers } from "../hooks/clientHooks";
+import { useMe, useSubmitJobReviews } from "../hooks/userHooks";
 import { ReviewSchema, type ReviewCredentials } from "../schemas/reviewSchemas";
+import { useReviewDraftStore, type ReviewDraft } from "../stores/reviewStores";
+import { RatingItemSkeleton } from "./skeleton/RatingItemSkeleton";
 
 const DialogJobRate = ({
   isDialogRatingOpen,
@@ -31,10 +33,40 @@ const DialogJobRate = ({
 }: {
   isDialogRatingOpen: boolean;
   setIsDialogRatingOpen: (open: boolean) => void;
-  job: Job;
+  job: JobAssignment;
 }) => {
-  const { data: workers, isPending: isWorkersPending } = useGetWorkers(job.id);
+  const { toBeReviewedData, isLoading: isWorkersLoading } = useGetWorkers(
+    job.id,
+    isDialogRatingOpen,
+  );
   const { user } = useMe();
+  const { mutate: submitJobReviews, isPending: isPendingSubmitJobReviews } =
+    useSubmitJobReviews();
+  const { rawDrafts, clearJobDrafts, hasHydrated } = useReviewDraftStore(
+    useShallow((state) => ({
+      rawDrafts: state.draftsByJob[job.id],
+      clearJobDrafts: state.clearJobDrafts,
+      hasHydrated: state.hasHydrated,
+    })),
+  );
+
+  const reviewDrafts = rawDrafts ?? [];
+
+  const handleSendRating = () => {
+    if (!user?.role || !reviewDrafts.length) return;
+
+    submitJobReviews(
+      {
+        jobId: job.id,
+        drafts: reviewDrafts,
+      },
+      {
+        onSuccess: () => clearJobDrafts(job.id),
+      },
+    );
+  };
+
+  if (!hasHydrated) return null;
 
   return (
     <Dialog
@@ -44,31 +76,46 @@ const DialogJobRate = ({
       <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className="flex flex-col gap-2">
-            Beri Penilaian untuk {user?.role === "client" ? "Pekerja" : "Klien"} Anda
+            Beri Penilaian untuk {user?.role === "client" ? "Pekerja" : "Klien"}{" "}
+            Anda
           </DialogTitle>
         </DialogHeader>
 
         <div className="w-full h-fit max-h-100 overflow-y-auto">
           <ul className="w-full h-fit flex flex-col gap-3">
-            {(user?.role === "client" && isWorkersPending) && <RatingItemSkeleton />}
-
-            {user?.role === "client" && workers && (
-              <>
-                {workers?.map((worker) => (
-                  <PartnerRateItem
-                    key={worker.id}
-                    jobId={job.id}
-                    partner={worker}
-                  />
-                ))}
-              </>
+            {/* client that will rate workers */}
+            {user?.role === "client" && isWorkersLoading ? (
+              <RatingItemSkeleton />
+            ) : (
+              user?.role === "client" &&
+              toBeReviewedData && (
+                <>
+                  {toBeReviewedData?.map((toBeReviewed) => (
+                    <PartnerRateItem
+                      key={toBeReviewed.worker.id}
+                      jobId={job.id}
+                      partner={toBeReviewed.worker}
+                      role={user?.role}
+                      payloadReview={reviewDrafts.find(
+                        (draft) =>
+                          draft.assignmentId === toBeReviewed.assignmentId,
+                      )}
+                    />
+                  ))}
+                </>
+              )
             )}
 
+            {/* worker that will rate client */}
             {user?.role === "worker" && job.client && (
               <PartnerRateItem
                 key={job.client.id}
                 partner={job.client}
                 jobId={job.id}
+                role={user?.role}
+                payloadReview={reviewDrafts.find(
+                  (draft) => draft.assignmentId === job.id,
+                )}
               />
             )}
           </ul>
@@ -81,7 +128,12 @@ const DialogJobRate = ({
           >
             Tutup Detail
           </Button>
-          <Button disabled>Kirim Penilaian</Button>
+          <Button
+            disabled={!reviewDrafts.length || isPendingSubmitJobReviews}
+            onClick={handleSendRating}
+          >
+            Kirim Penilaian
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -93,11 +145,16 @@ export default DialogJobRate;
 const PartnerRateItem = ({
   partner,
   jobId,
+  role,
+  payloadReview,
 }: {
   partner: Omit<User, "email" | "isVerified" | "isActive">;
   jobId: string;
+  role?: User["role"];
+  payloadReview?: ReviewDraft;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const upsertDraft = useReviewDraftStore((state) => state.upsertDraft);
   const initials = partner.fullName
     ? partner.fullName
         .split(" ")
@@ -114,9 +171,9 @@ const PartnerRateItem = ({
     resolver: zodResolver(ReviewSchema),
     mode: "onChange",
     defaultValues: {
-      assignmentId: "",
-      rating: 0,
-      comment: "",
+      assignmentId: payloadReview?.assignmentId || "",
+      rating: payloadReview?.rating || 0,
+      comment: payloadReview?.comment || "",
     },
   });
 
@@ -129,7 +186,15 @@ const PartnerRateItem = ({
   );
 
   const handleSaveToLocalStorage = (data: ReviewCredentials) => {
-    // TODO: temporary save to local storage, will be sent to server when user click "Kirim Penilaian"
+    if (!role) return;
+
+    upsertDraft(jobId, {
+      assignmentId: jobId,
+      rating: data.rating,
+      comment: data.comment,
+    });
+
+    setIsOpen(false);
   };
 
   return (
@@ -170,7 +235,7 @@ const PartnerRateItem = ({
                 render={({ field }) => (
                   <div className="flex gap-1">
                     {[1, 2, 3, 4, 5].map((i) => {
-                      const isActive = i <= (field.value || 0)
+                      const isActive = i <= (field.value || 0);
 
                       return (
                         <Icon
@@ -181,7 +246,7 @@ const PartnerRateItem = ({
                           height="1.8em"
                           style={{ color: "#F97316", cursor: "pointer" }}
                         />
-                      )
+                      );
                     })}
                   </div>
                 )}
@@ -197,7 +262,7 @@ const PartnerRateItem = ({
               <FieldLabel>Komentar</FieldLabel>
               <Textarea
                 placeholder="Ulasan Anda..."
-                className="text-sm sm:text-base"
+                className="text-sm sm:text-base resize-none"
                 {...register("comment")}
               />
             </Field>
