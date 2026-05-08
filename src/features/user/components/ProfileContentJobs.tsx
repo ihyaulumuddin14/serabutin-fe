@@ -8,64 +8,46 @@ import {
   DialogTitle,
 } from "@/shared/components/ui/dialog";
 import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-links";
-import type { Job } from "@/shared/types/entity.type";
+import type { JobAssignment } from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
 import { useState } from "react";
-import { useMeJobs } from "../hooks/clientHooks";
+import { useMeAssignments, useMeJobs } from "../hooks/clientHooks";
 import DialogJobRate from "./DialogJobRate";
 import { JobItemSkeleton } from "./skeleton/JobItemSkeleton";
-
-const mockListClientJobs: Job[] = [
-  {
-    id: "01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b",
-    client: {
-      id: "01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b",
-      fullName: "John Doe",
-      role: "client",
-      createdAt: "2023-01-01T00:00:00Z",
-      updatedAt: "2023-01-01T00:00:00Z",
-    },
-    category: {
-      id: "01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b",
-      name: "Web Development",
-      slug: "web-development",
-      isActive: true,
-      createdAt: "2023-01-01T00:00:00Z",
-      updatedAt: "2023-01-01T00:00:00Z",
-    },
-    title:
-      "Create a responsive website Lorem ipsum dolor sit amet consectetur adipiscing elit",
-    description: "I need a responsive website for my business.",
-    budgetMin: 100,
-    budgetMax: 500,
-    workersNeeded: 1,
-    locationDistrict: "Jakarta Selatan",
-    locationCity: "Jakarta",
-    status: "completed",
-    startAt: "2023-01-01T00:00:00Z",
-    deadlineAt: "2023-01-10T00:00:00Z",
-    createdAt: "2023-01-01T00:00:00Z",
-    updatedAt: "2023-01-01T00:00:00Z",
-  },
-];
+import { useMe } from "../hooks/userHooks";
 
 const ProfileContentJobs = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const { data, isPending: isJobsPending } = useMeJobs(page, limit);
-  const dataJobs: Job[] = (
-    data?.data?.length ? data.data : mockListClientJobs
-  ) as Job[];
+  const { user } = useMe();
+
+  // for client
+  const { data: clientData, isLoading: isLoadingJobs } = useMeJobs(page, limit);
+  const dataJobs = (clientData?.data ?? []) as JobAssignment[];
+
+  // for worker
+  const { data: workerData, isLoading: isLoadingAssignments } =
+    useMeAssignments(page, limit);
+  const dataAssignments = (workerData?.data ?? []) as JobAssignment[];
+
+  // determine active data based on user role
+  const isClient = user?.role === "client";
+  const activeData = isClient ? dataJobs : dataAssignments;
+  const isLoading = isClient ? isLoadingJobs : isLoadingAssignments;
+  const totalCount = isClient
+    ? clientData?.meta?.total
+    : workerData?.meta?.total;
+  const emptyMessage = isClient
+    ? "Anda belum membuat pekerjaan apapun."
+    : "Anda belum mengerjakan pekerjaan apapun.";
 
   return (
     <>
       <div className="w-full flex flex-col gap-2">
-        {isJobsPending ? (
-          [...Array(2)].map((_, i) => (
-            <JobItemSkeleton key={i} />
-          ))
-        ) : dataJobs.length > 0 ? (
-          dataJobs.map((item) => (
+        {isLoading ? (
+          [...Array(2)].map((_, i) => <JobItemSkeleton key={i} />)
+        ) : activeData.length > 0 ? (
+          activeData.map((item) => (
             <JobItem
               key={item.id}
               job={item}
@@ -73,16 +55,16 @@ const ProfileContentJobs = () => {
           ))
         ) : (
           <p className="text-center text-sm text-muted-foreground">
-            Belum ada pekerjaan yang dibuat.
+            {emptyMessage}
           </p>
         )}
       </div>
 
-      {!!data?.meta?.total && (
+      {!!totalCount && (
         <PaginationWithLinks
           page={page}
           pageSize={limit}
-          totalCount={data.meta.total}
+          totalCount={totalCount}
           onPageChange={setPage}
           onPageSizeChange={(newLimit) => {
             setLimit(newLimit);
@@ -96,13 +78,25 @@ const ProfileContentJobs = () => {
 
 export default ProfileContentJobs;
 
-const JobItem = ({ job }: { job: Job }) => {
+const JobItem = ({ job }: { job: JobAssignment }) => {
   const [isDialogDetailOpen, setIsDialogDetailOpen] = useState(false);
   const [isDialogRatingOpen, setIsDialogRatingOpen] = useState(false);
   const startDate = new Date(job.startAt);
   const deadlineDate = new Date(job.deadlineAt);
   const diffTime = Math.abs(deadlineDate.getTime() - startDate.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const statusVariant =
+    job.status === "open"
+      ? "error"
+      : job.status === "in_progress"
+        ? "warning"
+        : "success";
+  const statusLabel =
+    job.status === "open"
+      ? "Dibuka"
+      : job.status === "in_progress"
+        ? "Sedang dikerjakan"
+        : "Selesai";
 
   return (
     <>
@@ -111,20 +105,10 @@ const JobItem = ({ job }: { job: Job }) => {
         <div className="w-full flex justify-between">
           <Badge withDot>{job.category.name}</Badge>
           <Badge
-            variant={
-              job.status === "open"
-                ? "error"
-                : job.status === "in_progress"
-                  ? "warning"
-                  : "success"
-            }
+            variant={statusVariant}
             withDot
           >
-            {job.status === "open"
-              ? "Dibuka"
-              : job.status === "in_progress"
-                ? "Sedang dikerjakan"
-                : "Selesai"}
+            {statusLabel}
           </Badge>
         </div>
 
@@ -191,17 +175,17 @@ const JobItem = ({ job }: { job: Job }) => {
                   width="1em"
                   height="1em"
                   style={{ color: "#F97316" }}
-                />
-                {" "}
+                />{" "}
                 {new Date(job.startAt).toLocaleDateString("id-ID", {
                   day: "numeric",
                   month: "short",
                 })}{" "}
-                - {" "}
+                -{" "}
                 {new Date(job.deadlineAt).toLocaleDateString("id-ID", {
                   day: "numeric",
                   month: "short",
-                })} <b>({diffDays} hari)</b>
+                })}{" "}
+                <b>({diffDays} hari)</b>
               </p>
               <p className="text-sm text-muted-foreground flex items-center gap-2">
                 <Icon
@@ -215,18 +199,7 @@ const JobItem = ({ job }: { job: Job }) => {
             </div>
 
             <div className="w-full h-fit max-h-40 overflow-y-auto">
-              Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-              Assumenda alias minus beatae labore suscipit, expedita iure
-              temporibus aut sed laboriosam quis quasi omnis excepturi sint
-              vitae corporis vero eius commodi quia sequi voluptate, minima
-              corrupti? Quae ex architecto et recusandae dolorem unde iste
-              repellendus consequuntur est sed doloribus delectus tenetur, modi
-              explicabo praesentium quod vero dignissimos. Sit odit tempore
-              reprehenderit vero officia, alias eum quaerat accusamus veniam
-              impedit? Quo totam molestias consequuntur quae, sequi accusantium
-              voluptatum quos harum ipsa doloribus soluta molestiae accusamus
-              laboriosam eligendi nam consectetur doloremque veritatis inventore
-              placeat earum sed facere vero dolore. Et ipsam dicta deserunt.
+              {job.description}
             </div>
           </div>
           <DialogFooter>
