@@ -2,13 +2,15 @@ import { toCamel, toSnake } from "@/shared/lib/case";
 import type { Profile, Review, User } from "@/shared/types/entity.type";
 import { privateApi } from "@/shared/api/axiosInstance";
 import { type EditProfileSchema } from "../schemas/userSchemas";
+import type { ReviewCredentials } from "../schemas/reviewSchemas";
+import type { ApiResponse, MetaPagination } from "@/shared/types/common.type";
 
 export async function getMe() {
   const response = await privateApi.get(`/users/me`);
-  
+
   if (response.data.status !== "success")
     throw new Error(response.data?.message || "Gagal mengambil data pengguna");
-  
+
   return toCamel(response.data.data) as { user: User; profile: Profile };
 }
 
@@ -20,64 +22,69 @@ export const updateProfile = async (payload: EditProfileSchema) => {
   if (response.data.status !== "success")
     throw new Error(response.data?.message || "Gagal mengubah data pengguna");
 
-  return toCamel(response.data);
+  return toCamel(response.data) as ApiResponse;
 };
 
 export const updateProfileImage = async (file: File) => {
   const formData = new FormData();
   formData.append("file", file);
-  
+
   const uploadResponse = await privateApi.post("/uploads", formData);
 
   if (uploadResponse.data.status !== "success")
-    throw new Error(uploadResponse.data?.message || "Gagal mengunggah gambar profil");
+    throw new Error(
+      uploadResponse.data?.message || "Gagal mengunggah gambar profil",
+    );
 
   const updateResponse = await privateApi.patch("/users/me", {
     avatar_url: uploadResponse.data.data.url,
   });
 
   if (updateResponse.data.status !== "success")
-    throw new Error(updateResponse.data?.message || "Gagal memperbarui gambar profil");
+    throw new Error(
+      updateResponse.data?.message || "Gagal memperbarui gambar profil",
+    );
 
-
-  return toCamel(updateResponse.data);
-}
+  return toCamel(updateResponse.data) as ApiResponse;
+};
 
 export const getMeReviews = async (page: number, limit: number) => {
   const response = await privateApi.get("/users/me/reviews", {
     params: {
       page,
-      limit
-    }
+      limit,
+    },
   });
 
   if (response.data.status !== "success")
     throw new Error(response.data?.message || "Gagal mengambil data ulasan");
 
-  return toCamel(response.data) as {
-    status: string;
-    message: string;
-    data: Review[];
-    meta: {
-      currentPage: number;
-      perPage: number;
-      total: number;
-      lastPage: number;
-    }
+  return toCamel(response.data) as ApiResponse<Review[]> & {
+    meta: MetaPagination;
   };
-}
+};
 
-export const getReviewsByUserId = async (userId: string, page: number, limit: number) => {
-  const response = await privateApi.get(`/users/${userId}/reviews?page=${page}&limit=${limit}`);
-  return toCamel(response.data) as {
-    status: string;
-    message: string;
-    data: Review[];
-    meta: {
-      currentPage: number;
-      perPage: number;
-      total: number;
-      lastPage: number;
-    }
+export const getReviewsByUserId = async (
+  userId: string,
+  page: number,
+  limit: number,
+) => {
+  const response = await privateApi.get(
+    `/users/${userId}/reviews?page=${page}&limit=${limit}`,
+  );
+  return toCamel(response.data) as ApiResponse<Review[]> & {
+    meta: MetaPagination;
   };
-}
+};
+
+export const sendReview = async (jobId: string, payload: ReviewCredentials) => {
+  const response = await privateApi.post(
+    `/jobs/${jobId}/reviews`,
+    toSnake(payload),
+  );
+
+  if (response.data.status !== "success")
+    throw new Error(response.data?.message || "Gagal mengirim ulasan");
+
+  return toCamel(response.data) as ApiResponse;
+};

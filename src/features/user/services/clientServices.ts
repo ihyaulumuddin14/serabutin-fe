@@ -1,14 +1,7 @@
 import privateApi from "@/shared/api/axiosInstance";
 import { toCamel } from "@/shared/lib/case";
-import type { Job, User } from "@/shared/types/entity.type";
-
-const mockWorker: Omit<User, "email" | "isVerified" | "isActive"> = {
-  id: "01932b2a-7c3d-7e4f-8a5b-6c7d8e9f0a1b",
-  fullName: "John Doe",
-  role: "worker",
-  createdAt: "2023-01-01T00:00:00Z",
-  updatedAt: "2023-01-01T00:00:00Z",
-}
+import type { ApiResponse } from "@/shared/types/common.type";
+import type { JobAssignment } from "@/shared/types/entity.type";
 
 export const getClientJobs = async (page: number = 1, limit: number = 10, categorySlug?: string, status?: string) => {
   const response = await privateApi.get("/users/me/jobs", {
@@ -23,10 +16,31 @@ export const getClientJobs = async (page: number = 1, limit: number = 10, catego
   if (response.data.status !== "success")
     throw new Error(response.data?.message || "Gagal mengambil data pekerjaan");
 
-  return toCamel(response.data) as {
-    status: string,
-    message: string,
-    data: Job[],
+  return toCamel(response.data) as (ApiResponse<JobAssignment[]> & {
+      meta: {
+        currentPage: number,
+        perPage: number,
+        total: number,
+        lastPage: number
+      }
+    }
+  );
+}
+
+export const getWorkerAssignments = async (page: number = 1, limit: number = 10, categorySlug?: string, status?: string) => {
+  const response = await privateApi.get("/users/me/assignments", {
+    params: {
+      page,
+      limit,
+      categorySlug,
+      status
+    }
+  });
+
+  if (response.data.status !== "success")
+    throw new Error(response.data?.message || "Gagal mengambil data pekerjaan");
+
+  return toCamel(response.data) as ApiResponse<JobAssignment[]> & {
     meta: {
       currentPage: number,
       perPage: number,
@@ -37,12 +51,10 @@ export const getClientJobs = async (page: number = 1, limit: number = 10, catego
 }
 
 export const getWorkersByJobId = async (jobId: string) => {
-  // const response = await privateApi.get(`/jobs/${jobId}/workers`);
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  const response = await privateApi.get(`/jobs/${jobId}/workers`);
 
-  // if (response.data.status !== "success")
-  //   throw new Error(response.data?.message || "Gagal mengambil data pekerja");
+  if (response.data.status !== "success")
+    throw new Error(response.data?.message || "Gagal mengambil data pekerja");
 
-  // return toCamel(response.data.data)
-  return [mockWorker, mockWorker, mockWorker]
+  return toCamel(response.data.data) 
 }
