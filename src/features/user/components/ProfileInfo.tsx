@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/incompatible-library */
 import { useMemo, useState } from "react";
 import { useMe } from "../hooks/userHooks";
 import { useParams } from "react-router";

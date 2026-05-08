@@ -9,11 +9,7 @@ import {
 } from "../schemas/userSchemas";
 import { useMe, useUpdateProfile } from "../hooks/userHooks";
 import { useDistricts, useRegencies } from "../hooks/addressHooks";
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-} from "@/shared/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/shared/components/ui/field";
 import { Input } from "@/shared/components/ui/input";
 import {
   Select,
@@ -24,6 +20,7 @@ import {
 } from "@/shared/components/ui/select";
 import { useMemo } from "react";
 import ProfileImageEdit from "./ProfileImageEdit";
+import { Textarea } from "@/shared/components/ui/textarea";
 
 export const ProfileInfoEdit = ({
   setIsEditing,
@@ -88,9 +85,9 @@ export const ProfileInfoEdit = ({
           </Field>
           <Field>
             <FieldLabel>Bio</FieldLabel>
-            <Input
+            <Textarea
+              className="resize-none"
               {...register("bio")}
-              error={errors.bio?.message}
             />
           </Field>
           {user?.role === "client" && (
@@ -109,7 +106,7 @@ export const ProfileInfoEdit = ({
                 if (value !== cityValue) {
                   setValue("locationDistrict", null);
                 }
-                setValue("locationCity", value)
+                setValue("locationCity", value);
               }}
               value={cityValue ?? undefined}
             >
