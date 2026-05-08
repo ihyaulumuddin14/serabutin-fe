@@ -1,4 +1,5 @@
 import type { Role } from "@/features/auth/schemas/authSchemas"
+import type { Status } from "./common.type"
 
 export type User = {
   id: string,
@@ -57,7 +58,7 @@ export type Category = {
   updatedAt: string
 }
 
-export type Job = {
+export type JobAssignment = {
   id: string,
   client: Omit<User, "email" | "isVerified" | "isActive">,
   category: Category,
@@ -68,7 +69,7 @@ export type Job = {
   workersNeeded: number,
   locationDistrict: string,
   locationCity: string,
-  status: string,
+  status: Status,
   startAt: string,
   deadlineAt: string,
   createdAt: string,
