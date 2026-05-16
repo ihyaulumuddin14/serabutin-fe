@@ -12,4 +12,6 @@ export type CategoryRating = {
   reviewCount: number
 }
 
+export type BidStatus = "pending" | "accepted" | "rejected" | "withdrawn";
+
 export type WorkerProfile = User & { categoryRatings: CategoryRating[] }
