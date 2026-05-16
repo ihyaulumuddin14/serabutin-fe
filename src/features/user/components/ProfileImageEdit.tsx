@@ -19,16 +19,17 @@ const ProfileImageEdit = () => {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const { mutate: updateImageProfile, isPending: isUpdatingProfileImage } = useUploadImageProfile();
+  const { mutate: updateImageProfile, isPending: isUpdatingProfileImage } =
+    useUploadImageProfile();
   const initials = useMemo(() => {
     return user
       ? user.fullName
           .split(" ")
-          .map((n) => n[0])
+          .map((n, i) => (i < 2 ? n[0] : ""))
           .join("")
       : "";
   }, [user]);
-  
+
   useEffect(() => {
     if (!file) {
       return;

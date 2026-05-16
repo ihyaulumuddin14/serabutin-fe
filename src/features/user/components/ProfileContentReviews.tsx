@@ -135,25 +135,13 @@ const ReviewItem = ({
         <div className="flex gap-2">
           <div className="flex gap-0.5 items-center">
             {[...Array(5)].map((_, i) => {
-              if (i >= review.rating) {
-                return (
-                  <Icon
-                    key={i}
-                    icon="radix-icons:star-filled"
-                    width=".6em"
-                    height=".6em"
-                    style={{ color: "#9A8F85" }}
-                  />
-                );
-              }
-
               return (
                 <Icon
                   key={i}
                   icon="radix-icons:star-filled"
                   width=".6em"
                   height=".6em"
-                  style={{ color: "#F97316" }}
+                  style={{ color: (review.rating + 1) ? "#9A8F85" : "#F97316"}}
                 />
               );
             })}
