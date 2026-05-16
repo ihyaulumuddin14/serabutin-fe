@@ -11,7 +11,12 @@ import ReviewItemSkeleton from "./skeleton/ReviewItemSkeleton";
 const ProfileContentReviews = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const { data, isPending: isReviewsPending } = useMeReviews(page, limit);
+  const {
+    data,
+    isPending: isReviewsPending,
+    isError: isReviewsError,
+    error: reviewsError,
+  } = useMeReviews(page, limit);
   const { user, profile } = useMe();
   const dataReviews = (data?.data ?? []) as Review[];
   const workerProfile = profile as WorkerProfile | null;
@@ -37,6 +42,12 @@ const ProfileContentReviews = () => {
       <div className="w-full flex flex-col gap-2">
         {isReviewsPending ? (
           [...Array(2)].map((_, i) => <ReviewItemSkeleton key={i} />)
+        ) : isReviewsError ? (
+          <p className="text-center text-sm text-destructive">
+            {reviewsError instanceof Error
+              ? reviewsError.message
+              : "Terjadi kesalahan saat memuat ulasan."}
+          </p>
         ) : dataReviews.length > 0 ? (
           dataReviews.map((item) => {
             const initials = item.reviewer.fullName
@@ -141,7 +152,7 @@ const ReviewItem = ({
                   icon="radix-icons:star-filled"
                   width=".6em"
                   height=".6em"
-                  style={{ color: (review.rating + 1) ? "#9A8F85" : "#F97316"}}
+                  style={{ color: review.rating + 1 ? "#9A8F85" : "#F97316" }}
                 />
               );
             })}

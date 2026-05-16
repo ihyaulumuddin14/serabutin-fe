@@ -27,17 +27,24 @@ const ClientBidPage = () => {
   );
   const pathname = useLocation().pathname;
   const jobId = pathname.split("/").slice(-1)[0];
-  const { data: jobData, isPending: jobDataPending } = useGetJobById(jobId);
-  const { data: workersData } = useGetWorkers(
-    jobData?.id || "",
-    !!jobData,
-  );
-  const { data: bidsData, isLoading: bidsDataLoading } = useGetBidsOfJob(
-    jobData?.id || "",
-    statusFilter,
-    page,
-    limit,
-  );
+  const {
+    data: jobData,
+    isPending: jobDataPending,
+    isError: jobDataError,
+    error: jobError,
+  } = useGetJobById(jobId);
+  const {
+    data: workersData,
+    isLoading: workersLoading,
+    isError: workersError,
+    error: workersErrorData,
+  } = useGetWorkers(jobData?.id || "", !!jobData);
+  const {
+    data: bidsData,
+    isLoading: bidsDataLoading,
+    isError: bidsError,
+    error: bidsErrorData,
+  } = useGetBidsOfJob(jobData?.id || "", statusFilter, page, limit);
   const sortedBids = useMemo(() => {
     const bids = bidsData?.data ? [...bidsData.data] : [];
 
@@ -73,6 +80,24 @@ const ClientBidPage = () => {
     );
   }
 
+  if (jobDataError) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+        <Icon
+          icon="ic:baseline-error-outline"
+          width="3em"
+          height="3em"
+          style={{ color: "#F97316" }}
+        />
+        <p className="text-muted-foreground text-sm">
+          {jobError instanceof Error
+            ? jobError.message
+            : "Terjadi kesalahan saat memuat pekerjaan."}
+        </p>
+      </div>
+    );
+  }
+
   if (!jobData && !jobDataPending) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center gap-4">
@@ -102,9 +127,22 @@ const ClientBidPage = () => {
               height="1em"
               style={{ color: "#F97316" }}
             />
-            Diterima {workersData?.length || 0} dari {jobData?.workersNeeded || 0}{" "}
-            total yang dibutuhkan
+            {workersLoading ? (
+              "Memuat jumlah pekerja..."
+            ) : (
+              <>
+                Diterima {workersData?.length || 0} dari{" "}
+                {jobData?.workersNeeded || 0} total yang dibutuhkan
+              </>
+            )}
           </p>
+          {workersError && (
+            <p className="text-xs text-destructive">
+              {workersErrorData instanceof Error
+                ? workersErrorData.message
+                : "Gagal memuat pekerja."}
+            </p>
+          )}
         </div>
 
         <div className="w-full md:w-fit flex justify-end items-center gap-4 md:gap-6">
@@ -122,10 +160,15 @@ const ClientBidPage = () => {
         </div>
       </header>
 
-
       <ol className="w-full flex flex-col gap-3 mt-3 border">
         {bidsDataLoading ? (
           [...Array(2)].map((_, i) => <JobOfferSkeleton key={i} />)
+        ) : bidsError ? (
+          <p className="text-center text-sm text-destructive">
+            {bidsErrorData instanceof Error
+              ? bidsErrorData.message
+              : "Terjadi kesalahan saat memuat penawaran."}
+          </p>
         ) : sortedBids.length ? (
           sortedBids.map((bid) => (
             <ClientBidItem
@@ -175,7 +218,10 @@ const BidSortFilter = ({
         value={value}
         onValueChange={(nextValue) => onChange(nextValue as BidSortOption)}
       >
-        <SelectTrigger size="sm" className="bg-card">
+        <SelectTrigger
+          size="sm"
+          className="bg-card"
+        >
           <SelectValue placeholder="Urutkan" />
         </SelectTrigger>
         <SelectContent>
@@ -205,7 +251,10 @@ const BidStatusFilter = ({
           onChange(nextValue === "all" ? undefined : (nextValue as BidStatus))
         }
       >
-        <SelectTrigger size="sm" className="bg-card">
+        <SelectTrigger
+          size="sm"
+          className="bg-card"
+        >
           <SelectValue placeholder="Semua status" />
         </SelectTrigger>
         <SelectContent>
@@ -252,7 +301,7 @@ const ClientBidItem = ({ bid, category }: { bid: Bid; category: Category }) => {
 
   return (
     <li
-      className={`w-full p-3 rounded-lg border border-border bg-card flex flex-col items-start sm:flex-row justify-between sm:items-center gap-5 ${(bid.status === "accepted" || bid.status === "rejected") ? "opacity-50 pointer-events-none" : ""}`}
+      className={`w-full p-3 rounded-lg border border-border bg-card flex flex-col items-start sm:flex-row justify-between sm:items-center gap-5 ${bid.status === "accepted" || bid.status === "rejected" ? "opacity-50 pointer-events-none" : ""}`}
     >
       <div className="flex gap-2 items-center">
         {avatarContent}

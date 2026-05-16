@@ -11,6 +11,7 @@ import {
 import type { JobAssignment } from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
 import { useMemo } from "react";
+import Skeleton from "@/shared/components/Skeleton";
 
 const DialogJobDetail = ({
   job,
@@ -51,7 +52,7 @@ const DialogJobDetail = ({
     </div>
   );
 
-  const { data } = useUserById(job.client.id);
+  const { data, isLoading, isError, error } = useUserById(job.client.id);
   const avgRating =
     data?.profile && "avgRating" in data.profile ? data.profile.avgRating : 0;
 
@@ -69,22 +70,35 @@ const DialogJobDetail = ({
                 <div className="flex flex-col">
                   <span className="font-bold text-lg">{user?.fullName}</span>
                   <span className="flex gap-0.5 items-center">
-                    {[...Array(5)].map((_, i) => {
-                      return (
-                        <Icon
-                          key={i}
-                          icon="radix-icons:star-filled"
-                          width=".8em"
-                          height=".8em"
-                          style={{
-                            color: i + 1 > avgRating ? "#9A8F85" : "#F97316",
-                          }}
-                        />
-                      );
-                    })}{" "}
-                    <span className="ml-2 text-sm text-muted-foreground">
-                      {avgRating.toFixed(1)}
-                    </span>
+                    {isLoading ? (
+                      <Skeleton className="w-20 h-3" />
+                    ) : isError ? (
+                      <span className="text-sm text-destructive">
+                        {error instanceof Error
+                          ? error.message
+                          : "Gagal memuat rating."}
+                      </span>
+                    ) : (
+                      <>
+                        {[...Array(5)].map((_, i) => {
+                          return (
+                            <Icon
+                              key={i}
+                              icon="radix-icons:star-filled"
+                              width=".8em"
+                              height=".8em"
+                              style={{
+                                color:
+                                  i + 1 > avgRating ? "#9A8F85" : "#F97316",
+                              }}
+                            />
+                          );
+                        })}{" "}
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          {avgRating.toFixed(1)}
+                        </span>
+                      </>
+                    )}
                   </span>
                 </div>
               </>

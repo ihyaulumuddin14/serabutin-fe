@@ -35,10 +35,12 @@ const DialogJobRate = ({
   setIsDialogRatingOpen: (open: boolean) => void;
   job: JobAssignment;
 }) => {
-  const { data: toBeReviewedData, isLoading: isWorkersLoading } = useGetWorkers(
-    job.id,
-    isDialogRatingOpen,
-  );
+  const {
+    data: toBeReviewedData,
+    isLoading: isWorkersLoading,
+    isError: isWorkersError,
+    error: workersError,
+  } = useGetWorkers(job.id, isDialogRatingOpen);
   const { user } = useMe();
   const { mutate: submitJobReviews, isPending: isPendingSubmitJobReviews } =
     useSubmitJobReviews();
@@ -86,6 +88,12 @@ const DialogJobRate = ({
             {/* client that will rate workers */}
             {user?.role === "client" && isWorkersLoading ? (
               <RatingItemSkeleton />
+            ) : user?.role === "client" && isWorkersError ? (
+              <li className="text-sm text-destructive">
+                {workersError instanceof Error
+                  ? workersError.message
+                  : "Gagal memuat pekerja."}
+              </li>
             ) : (
               user?.role === "client" &&
               toBeReviewedData && (

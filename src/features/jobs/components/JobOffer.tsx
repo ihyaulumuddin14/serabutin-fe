@@ -14,8 +14,32 @@ import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-link
 import { useState } from "react";
 
 const JobOffer = () => {
-  const { user } = useMe();
+  const { user, isLoading, isError, error } = useMe();
   const isMobile = useIsMobile();
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-fit bg-card flex flex-col justify-center p-4 sm:p-6 shadow-md rounded-md">
+        <div className="flex flex-col gap-3">
+          {[...Array(2)].map((_, i) => (
+            <JobOfferSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="w-full h-fit bg-card flex flex-col justify-center p-4 sm:p-6 shadow-md rounded-md">
+        <p className="text-sm text-destructive">
+          {error instanceof Error
+            ? error.message
+            : "Terjadi kesalahan saat memuat data pengguna."}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-fit bg-card flex flex-col justify-center p-4 sm:p-6 shadow-md rounded-md">
@@ -49,18 +73,24 @@ export default JobOffer;
 const JobBidList = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const { data, isLoading } = useMeJobs({
+  const { data, isLoading, isError, error } = useMeJobs({
     page,
     limit,
     status: "open",
   });
   const jobBids: JobAssignment[] = data?.data ?? [];
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : "Terjadi kesalahan saat memuat pekerjaan.";
 
   return (
     <>
       <ol className="flex flex-col gap-3 my-3">
         {isLoading ? (
           [...Array(2)].map((_, i) => <JobOfferSkeleton key={i} />)
+        ) : isError ? (
+          <p className="text-center text-sm text-destructive">{errorMessage}</p>
         ) : jobBids.length > 0 ? (
           jobBids.map((job) => (
             <JobBidItem
@@ -98,15 +128,21 @@ export const JobBidItem = ({
   job: JobAssignment;
   className?: string;
 }) => {
-  const { data } = useGetBidsOfJob(job.id);
+  const { data, isLoading, isError, error } = useGetBidsOfJob(job.id);
   const totalBids = data?.meta?.total ?? 0;
+  const errorMessage =
+    error instanceof Error ? error.message : "Gagal memuat jumlah tawaran.";
 
   return (
     <li
       className={`w-full p-3 rounded-lg border border-border bg-background flex flex-col gap-2 ${className}`}
     >
       <p className="font-semibold">{job.title}</p>
-      {totalBids > 0 ? (
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Memuat tawaran...</p>
+      ) : isError ? (
+        <p className="text-sm text-destructive">{errorMessage}</p>
+      ) : totalBids > 0 ? (
         <Link
           to={`/job-bids/${job.id}`}
           className="text-primary hover:underline"
@@ -125,17 +161,23 @@ export const BidList = ({
 }: {
   enabledBidsFetch: boolean;
 }) => {
-  const { data, isLoading } = useMeBids({
+  const { data, isLoading, isError, error } = useMeBids({
     page: 1,
     limit: 5,
     enabled: enabledBidsFetch,
   });
   const bids = data?.data ?? [];
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : "Terjadi kesalahan saat memuat penawaran.";
 
   return (
     <ol className="flex flex-col gap-3 mt-3">
       {isLoading ? (
         [...Array(2)].map((_, i) => <JobOfferSkeleton key={i} />)
+      ) : isError ? (
+        <p className="text-center text-sm text-destructive">{errorMessage}</p>
       ) : bids.length > 0 ? (
         bids.map(({ bid, job: jobAssignment }) => (
           <WorkerBidItem

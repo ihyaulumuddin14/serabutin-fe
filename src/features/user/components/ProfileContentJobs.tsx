@@ -23,18 +23,35 @@ const ProfileContentJobs = () => {
   const { user } = useMe();
 
   // for client
-  const { data: clientData, isLoading: isLoadingJobs } = useMeJobs({ page, limit });
+  const {
+    data: clientData,
+    isLoading: isLoadingJobs,
+    isError: isClientJobsError,
+    error: clientJobsError,
+  } = useMeJobs({ page, limit });
   const dataJobs = (clientData?.data ?? []) as JobAssignment[];
 
   // for worker
-  const { data: workerData, isLoading: isLoadingAssignments } =
-    useMeAssignments(page, limit);
+  const {
+    data: workerData,
+    isLoading: isLoadingAssignments,
+    isError: isWorkerJobsError,
+    error: workerJobsError,
+  } = useMeAssignments(page, limit);
   const dataAssignments = (workerData?.data ?? []) as JobAssignment[];
 
   // determine active data based on user role
   const isClient = user?.role === "client";
   const activeData = isClient ? dataJobs : dataAssignments;
   const isLoading = isClient ? isLoadingJobs : isLoadingAssignments;
+  const isError = isClient ? isClientJobsError : isWorkerJobsError;
+  const errorMessage = isClient
+    ? clientJobsError instanceof Error
+      ? clientJobsError.message
+      : "Terjadi kesalahan saat memuat pekerjaan."
+    : workerJobsError instanceof Error
+      ? workerJobsError.message
+      : "Terjadi kesalahan saat memuat pekerjaan.";
   const totalCount = isClient
     ? clientData?.meta?.total
     : workerData?.meta?.total;
@@ -47,6 +64,8 @@ const ProfileContentJobs = () => {
       <div className="w-full flex flex-col gap-2">
         {isLoading ? (
           [...Array(2)].map((_, i) => <JobItemSkeleton key={i} />)
+        ) : isError ? (
+          <p className="text-center text-sm text-destructive">{errorMessage}</p>
         ) : activeData.length > 0 ? (
           activeData.map((item) => (
             <JobItem
