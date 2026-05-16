@@ -1,22 +1,26 @@
 import privateApi from "@/shared/api/axiosInstance";
 import { toCamel } from "@/shared/lib/case";
-import type { ApiResponse, MetaCursorPagination } from "@/shared/types/common.type";
+import type {
+  ApiResponse,
+  MetaCursorPagination,
+} from "@/shared/types/common.type";
 import type { Category, JobAssignment } from "@/shared/types/entity.type";
 import axios from "axios";
+import { ensureSuccess } from "../utils/jobServiceUtils";
 
 export interface JobsInfiniteResponse extends ApiResponse {
   data: JobAssignment[];
   meta: MetaCursorPagination;
 }
 
+const jobsBaseUrl = `${import.meta.env.VITE_API_URL}`;
+
 export const getCategories = async () => {
-  const response = await axios.get(`${import.meta.env.VITE_API_URL}/categories`);
+  const response = await axios.get(`${jobsBaseUrl}/categories`);
 
-  if (response.data.status !== "success")
-    throw new Error(response.data?.message || "Gagal mengambil data kategori");
-
-  return toCamel(response.data.data) as Category[];
-}
+  const data = ensureSuccess(response, "Gagal mengambil data kategori");
+  return toCamel(data.data) as Category[];
+};
 
 export const getJobs = async ({
   cursor,
@@ -27,20 +31,20 @@ export const getJobs = async ({
   budgetMax,
   dateFrom,
   dateTo,
-  q
+  q,
 }: {
-  limit?: number,
-  page?: number,
-  categorySlug?: string,
-  cursor?: string,
-  city?: string,
-  budgetMin?: number,
-  budgetMax?: number,
-  dateFrom?: string,
-  dateTo?: string,
-  q?: string
+  limit?: number;
+  page?: number;
+  categorySlug?: string;
+  cursor?: string;
+  city?: string;
+  budgetMin?: number;
+  budgetMax?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  q?: string;
 }) => {
-  const response = await axios.get(`${import.meta.env.VITE_API_URL}/jobs`, {
+  const response = await axios.get(`${jobsBaseUrl}/jobs`, {
     params: {
       cursor,
       limit,
@@ -54,19 +58,13 @@ export const getJobs = async ({
     },
   });
 
-  if (response.data.status !== "success")
-    throw new Error(
-      response.data?.message || "Gagal mengambil data pekerjaan",
-    );
-
-  return toCamel(response.data) as JobsInfiniteResponse;
-}
+  const data = ensureSuccess(response, "Gagal mengambil data pekerjaan");
+  return toCamel(data) as JobsInfiniteResponse;
+};
 
 export const getJobById = async (jobId: string) => {
-  const response = await privateApi.get(`${import.meta.env.VITE_API_URL}/jobs/${jobId}`);
+  const response = await privateApi.get(`${jobsBaseUrl}/jobs/${jobId}`);
 
-  if (response.data.status !== "success")
-    throw new Error(response.data?.message || "Gagal mengambil data pekerjaan",);
-
-  return toCamel(response?.data?.data) as JobAssignment;
-}
+  const data = ensureSuccess(response, "Gagal mengambil data pekerjaan");
+  return toCamel(data.data) as JobAssignment;
+};
