@@ -1,9 +1,10 @@
-import { toCamel, toSnake } from "@/shared/lib/case";
-import type { Profile, Review, User } from "@/shared/types/entity.type";
 import { privateApi } from "@/shared/api/axiosInstance";
-import { type EditProfileSchema } from "../schemas/userSchemas";
-import type { ReviewCredentials } from "../schemas/reviewSchemas";
+import { toCamel, toSnake } from "@/shared/lib/case";
 import type { ApiResponse, MetaPagination } from "@/shared/types/common.type";
+import type { Profile, Review, User } from "@/shared/types/entity.type";
+import type { ReviewCredentials } from "../schemas/reviewSchemas";
+import { type EditProfileSchema } from "../schemas/userSchemas";
+import type { WorkerProfile } from "../types";
 
 export async function getMe() {
   const response = await privateApi.get(`/users/me`);
@@ -87,4 +88,14 @@ export const sendReview = async (jobId: string, payload: ReviewCredentials) => {
     throw new Error(response.data?.message || "Gagal mengirim ulasan");
 
   return toCamel(response.data) as ApiResponse;
+};
+
+
+export const getUserById = async (userId: string) => {
+  const response = await privateApi.get(`/users/${userId}`);
+
+  if (response.data.status !== "success")
+    throw new Error(response.data?.message || "Gagal mengambil data pengguna");
+
+  return toCamel(response.data.data) as { user: User; profile: Profile | WorkerProfile }  ;
 };

@@ -11,10 +11,11 @@ const ProfileInfo = () => {
     return user
       ? user.fullName
           .split(" ")
-          .map((n) => n[0])
+          .map((n, i) => (i < 2 ? n[0] : ""))
           .join("")
       : "";
   }, [user]);
+  console.log(userId);
   const isOwnProfile = !userId || userId === user?.id;
   const [isEditing, setIsEditing] = useState(false);
 

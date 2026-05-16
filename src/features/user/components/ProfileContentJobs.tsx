@@ -11,10 +11,11 @@ import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-link
 import type { JobAssignment } from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
 import { useState } from "react";
-import { useMeAssignments, useMeJobs } from "../hooks/clientHooks";
+import { useMeJobs } from "../hooks/clientHooks";
+import { useMeAssignments } from "../hooks/workerHooks";
+import { useMe } from "../hooks/userHooks";
 import DialogJobRate from "./DialogJobRate";
 import { JobItemSkeleton } from "./skeleton/JobItemSkeleton";
-import { useMe } from "../hooks/userHooks";
 
 const ProfileContentJobs = () => {
   const [page, setPage] = useState(1);
@@ -22,7 +23,7 @@ const ProfileContentJobs = () => {
   const { user } = useMe();
 
   // for client
-  const { data: clientData, isLoading: isLoadingJobs } = useMeJobs(page, limit);
+  const { data: clientData, isLoading: isLoadingJobs } = useMeJobs({ page, limit });
   const dataJobs = (clientData?.data ?? []) as JobAssignment[];
 
   // for worker

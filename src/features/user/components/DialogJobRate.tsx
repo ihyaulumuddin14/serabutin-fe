@@ -35,7 +35,7 @@ const DialogJobRate = ({
   setIsDialogRatingOpen: (open: boolean) => void;
   job: JobAssignment;
 }) => {
-  const { toBeReviewedData, isLoading: isWorkersLoading } = useGetWorkers(
+  const { data: toBeReviewedData, isLoading: isWorkersLoading } = useGetWorkers(
     job.id,
     isDialogRatingOpen,
   );
@@ -158,7 +158,7 @@ const PartnerRateItem = ({
   const initials = partner.fullName
     ? partner.fullName
         .split(" ")
-        .map((n) => n[0])
+        .map((n, i) => (i < 2 ? n[0] : ""))
         .join("")
     : "";
 

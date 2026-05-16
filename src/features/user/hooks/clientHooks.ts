@@ -1,25 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
-import { getClientJobs, getWorkerAssignments, getWorkersByJobId } from "../services/clientServices";
+import { getBidsOfJob, getClientJobs, getWorkersByJobId } from "../services/clientServices";
+import type { BidStatus, WorkerToReview } from "../types";
 import { useMe } from "./userHooks";
-import type { WorkerToReview } from "../types";
 
-export const useMeJobs = (page: number = 1, limit: number = 10, categorySlug?: string, status?: string) => {
+export const useMeJobs = ({
+  page = 1,
+  limit = 10,
+  categorySlug,
+  status
+}: {
+  page?: number;
+  limit?: number;
+  categorySlug?: string;
+  status?: string;
+}) => {
   const { user } = useMe();
 
   return useQuery({
     queryKey: ["jobs"],
     queryFn: () => getClientJobs(page, limit, categorySlug, status),
     enabled: user?.role === "client"
-  })
-}
-
-export const useMeAssignments = (page: number = 1, limit: number = 10, categorySlug?: string, status?: string) => {
-  const { user } = useMe();
-
-  return useQuery({
-    queryKey: ["assignments"],
-    queryFn: () => getWorkerAssignments(page, limit, categorySlug, status),
-    enabled: user?.role === "worker"
   })
 }
 
@@ -35,9 +35,20 @@ export const useGetWorkers = (jobId: string, enabled: boolean = true) => {
   })
 
   return {
-    toBeReviewedData: data?.data as WorkerToReview[],
+    data: data?.data as WorkerToReview[],
     isLoading,
     isError,
     error
   }
+}
+
+export const useGetBidsOfJob = (jobId: string, status?: BidStatus, page?: number, limit?: number) => {
+  const { user } = useMe();
+  const isClient = user?.role === "client";
+
+  return useQuery({
+    queryKey: ["bids", jobId],
+    queryFn: () => getBidsOfJob(page, jobId, status, limit),
+    enabled: !!jobId && isClient
+  })
 }

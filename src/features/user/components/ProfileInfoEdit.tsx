@@ -41,7 +41,7 @@ export const ProfileInfoEdit = ({
     defaultValues: {
       fullName: user?.fullName || "",
       bio: profile?.bio || "",
-      phone: profile?.phone || "",
+      phone: profile?.phone != null ? String(profile.phone) : null,
       locationCity: profile?.locationCity || null,
       locationDistrict: profile?.locationDistrict || null,
       avatarUrl: profile?.avatarUrl || "",
@@ -94,6 +94,9 @@ export const ProfileInfoEdit = ({
             <Field>
               <FieldLabel>Nomor Telepon</FieldLabel>
               <Input
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 {...register("phone")}
                 error={errors.phone?.message}
               />
