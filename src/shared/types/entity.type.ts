@@ -1,5 +1,6 @@
 import type { Role } from "@/features/auth/schemas/authSchemas"
-import type { Status } from "./common.type"
+import type { JobStatus } from "./common.type"
+import type { BidStatus } from "@/features/user/types"
 
 export type User = {
   id: string,
@@ -60,7 +61,7 @@ export type Category = {
 
 export type JobAssignment = {
   id: string,
-  client: Omit<User, "email" | "isVerified" | "isActive">,
+  client: Omit<User, "email" | "isVerified" | "isActive"> & Partial<Pick<Profile, "phone">>,
   category: Category,
   title: string,
   description: string,
@@ -69,9 +70,24 @@ export type JobAssignment = {
   workersNeeded: number,
   locationDistrict: string,
   locationCity: string,
-  status: Status,
+  status: JobStatus,
   startAt: string,
   deadlineAt: string,
+  createdAt: string,
+  updatedAt: string
+}
+
+export type Bid = {
+  id: string,
+  worker: {
+    id: string,
+    fullName: string,
+    role: Role,
+    createdAt: string,
+    updatedAt: string
+  },
+  proposedPrice: number,
+  status: BidStatus,
   createdAt: string,
   updatedAt: string
 }

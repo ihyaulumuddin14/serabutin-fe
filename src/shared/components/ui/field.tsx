@@ -41,7 +41,7 @@ function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="field-group"
       className={cn(
-        "group/field-group @container/field-group flex w-full flex-col gap-7 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4",
+        "group/field-group @container/field-group flex w-full flex-col gap-5 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4",
         className,
       )}
       {...props}
@@ -77,7 +77,7 @@ function Field({
       role="group"
       data-slot="field"
       data-orientation={orientation}
-      className={cn(fieldVariants({ orientation }), "gap-1", className)}
+      className={cn(fieldVariants({ orientation }), "gap-1.5", className)}
       {...props}
     />
   );
@@ -112,6 +112,7 @@ function FieldLabel({ className, icon, children, ...props }: FieldLabelProps) {
         "*:data-[slot=field]:p-3",
         "dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10",
         "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col text-sm",
+        "text-secondary-foreground has-[>[data-slot=field]]:text-foreground",
         className,
       )}
       {...props}

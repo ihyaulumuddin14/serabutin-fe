@@ -11,7 +11,7 @@ const NavbarBack = () => {
       {/* logo */}
       <Link to="/" className="flex gap-3 items-center">
         <img src="/logo.webp" alt="logo" />
-        <h1 className="text-xl sm:text-[26px] tracking-[3.64px] font-inter font-bold">SERABUTIN</h1>
+        <h1 className="text-xl sm:text-[26px] font-inter font-bold">Serabutin</h1>
       </Link>
 
       {/* back button */}

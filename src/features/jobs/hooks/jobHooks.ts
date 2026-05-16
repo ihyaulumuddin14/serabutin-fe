@@ -1,17 +1,56 @@
-import type { Category } from "@/shared/types/entity.type";
-import { useQuery } from "@tanstack/react-query"
-import axios from "axios"
+import { useQuery } from "@tanstack/react-query";
+import { getCategories, getJobById, getJobs } from "../services/jobServices";
 
 export const useCategory = () => {
   return useQuery({
     queryKey: ["category"],
-    queryFn: async () => {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/categories`);
+    queryFn: getCategories
+  })
+}
 
-      if (response.data.status !== "success")
-        throw new Error(response.data?.message || "Gagal mengambil data kategori");
-    
-      return response.data.data as Category[];
-    }
+export const useGetJobs = ({
+  cursor,
+  limit = 10,
+  categorySlug,
+  city,
+  budgetMin,
+  budgetMax,
+  dateFrom,
+  dateTo,
+  q
+}: {
+  limit?: number,
+  page?: number,
+  categorySlug?: string,
+  cursor?: string,
+  city?: string,
+  budgetMin?: number,
+  budgetMax?: number,
+  dateFrom?: string,
+  dateTo?: string,
+  q?: string
+}) => {
+  return useQuery({
+    queryKey: ["jobs", cursor, categorySlug, city, budgetMin, budgetMax, dateFrom, dateTo, q],
+    queryFn: () => getJobs({
+      cursor,
+      limit,
+      categorySlug,
+      city,
+      budgetMin,
+      budgetMax,
+      dateFrom,
+      dateTo,
+      q
+    }),
+    retry: false
+  })
+}
+
+export const useGetJobById = (jobId: string = "fe463126-5d81-44b8-a798-56032046fbd2") => {
+  return useQuery({
+    queryKey: ["job", jobId],
+    queryFn: () => getJobById(jobId),
+    retry: false
   })
 }

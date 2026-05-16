@@ -20,7 +20,7 @@ export const AuthCard = ({
         <CardTitle className="flex flex-col gap-3">
           {/* title */}
           <header className="w-full">
-            <h1 className="text-xl sm:text-[26px] tracking-[3.64px] font-inter font-bold text-foreground">
+            <h1 className="text-xl sm:text-[26px] font-inter font-bold text-foreground">
               {title}
             </h1>
             <p className="font-normal">{description}</p>
