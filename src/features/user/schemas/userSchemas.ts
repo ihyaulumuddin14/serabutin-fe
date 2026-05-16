@@ -7,7 +7,14 @@ export const EditProfileCredentials = z
     locationCity: z.string().nullable(),
     locationDistrict: z.string().nullable(),
     avatarUrl: z.string().nullable(),
-    phone: z.string().nullable(),
+    phone: z
+      .string()
+      .trim()
+      .nullable()
+      .transform((val) => (val === "" ? null : val))
+      .refine((val) => val === null || /^\d+$/.test(val), {
+        message: "Nomor telepon harus angka",
+      }),
   })
   .refine(
     (data) =>
