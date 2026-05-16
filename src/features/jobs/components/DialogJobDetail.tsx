@@ -22,24 +22,28 @@ const DialogJobDetail = ({
   isDialogDetailOpen: boolean;
   setIsDialogDetailOpen: (open: boolean) => void;
 }) => {
-  const { user, profile } = useMe();
-  const initials = useMemo(() => {
-    return user
-      ? user.fullName
-          .split(" ")
-          .map((n, i) => (i < 2 ? n[0] : ""))
-          .join("")
-      : "";
-  }, [user]);
+  const { user } = useMe();
   const startAt = new Date(job.startAt);
   const deadlineAt = new Date(job.deadlineAt);
   const diffTime = deadlineAt.getTime() - startAt.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  const { data: clientData, isLoading, isError, error } = useUserById(job.client.id);
+  const initials = useMemo(() => {
+    return clientData?.user?.fullName
+      ? clientData.user.fullName
+          .split(" ")
+          .map((n, i) => (i < 2 ? n[0] : ""))
+          .join("")
+      : "";
+  }, [clientData]);
+  const clientProfile = clientData?.profile;
+  const clientAvgRating = clientData?.profile && "avgRating" in clientData.profile ? clientData.profile.avgRating : 0;
 
-  const avatarContent = profile?.avatarUrl ? (
+  const avatarContent = clientProfile && "avatarUrl" in clientProfile && clientProfile.avatarUrl ? (
     <div className="w-10 h-10 rounded-full overflow-hidden shrink-0">
       <img
-        src={profile.avatarUrl}
+        src={clientProfile.avatarUrl}
         alt="avatar image"
         className="w-full h-full object-cover object-center"
       />
@@ -52,9 +56,6 @@ const DialogJobDetail = ({
     </div>
   );
 
-  const { data, isLoading, isError, error } = useUserById(job.client.id);
-  const avgRating =
-    data?.profile && "avgRating" in data.profile ? data.profile.avgRating : 0;
 
   return (
     <Dialog
@@ -63,12 +64,12 @@ const DialogJobDetail = ({
     >
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle className="flex gap-2">
+          <DialogTitle className="flex gap-2 items-center">
             {user?.role === "worker" && (
               <>
                 {avatarContent}
                 <div className="flex flex-col">
-                  <span className="font-bold text-lg">{user?.fullName}</span>
+                  <span className="font-bold text-lg">{clientData?.user?.fullName}</span>
                   <span className="flex gap-0.5 items-center">
                     {isLoading ? (
                       <Skeleton className="w-20 h-3" />
@@ -89,13 +90,13 @@ const DialogJobDetail = ({
                               height=".8em"
                               style={{
                                 color:
-                                  i + 1 > avgRating ? "#9A8F85" : "#F97316",
+                                  i + 1 > clientAvgRating ? "#9A8F85" : "#F97316",
                               }}
                             />
                           );
                         })}{" "}
                         <span className="ml-2 text-sm text-muted-foreground">
-                          {avgRating.toFixed(1)}
+                          {clientAvgRating.toFixed(1)}
                         </span>
                       </>
                     )}
