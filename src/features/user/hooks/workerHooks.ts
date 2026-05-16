@@ -1,7 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { getWorkerAssignments, getWorkerBids } from "../services/workerServices";
+import {
+  getWorkerAssignments,
+  getWorkerBids,
+} from "../services/workerServices";
 import type { BidStatus } from "../types";
 import { useMe } from "./userHooks";
+import { workerKeys } from "../queries/userQueryKeys";
 
 export const useMeAssignments = (
   page: number = 1,
@@ -10,13 +14,14 @@ export const useMeAssignments = (
   status?: string,
 ) => {
   const { user } = useMe();
+  const params = { page, limit, categorySlug, status };
 
   return useQuery({
-    queryKey: ["assignments", page, limit, categorySlug, status],
+    queryKey: workerKeys.assignments(params),
     queryFn: () => getWorkerAssignments(page, limit, categorySlug, status),
-    enabled: user?.role === "worker"
-  })
-}
+    enabled: user?.role === "worker",
+  });
+};
 
 export const useMeBids = ({
   page = 1,
@@ -30,10 +35,11 @@ export const useMeBids = ({
   enabled?: boolean;
 }) => {
   const { user } = useMe();
+  const params = { page, limit, status };
 
   return useQuery({
-    queryKey: ["bids", page, limit, status],
+    queryKey: workerKeys.bids(params),
     queryFn: () => getWorkerBids(page, limit, status),
     enabled: user?.role === "worker" && enabled,
-   })
-}
+  });
+};

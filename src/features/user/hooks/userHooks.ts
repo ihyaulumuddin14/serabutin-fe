@@ -5,12 +5,9 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { AxiosError } from "axios";
-import { toast } from "sonner";
 import type { ReviewCredentials } from "../schemas/reviewSchemas";
-import {
-  type EditProfileSchema
-} from "../schemas/userSchemas";
+import { type EditProfileSchema } from "../schemas/userSchemas";
+import { userKeys } from "../queries/userQueryKeys";
 import {
   getMe,
   getMeReviews,
@@ -21,10 +18,11 @@ import {
   updateProfileImage,
 } from "../services/userServices";
 import type { ReviewDraft } from "../stores/reviewStores";
+import { showUserError, showUserSuccess } from "../utils/userUtils";
 
 export const useMe = () => {
   const { data, isPending, isError, error, isLoading } = useQuery({
-    queryKey: ["me"],
+    queryKey: userKeys.me(),
     queryFn: getMe,
     retry: false,
     refetchOnWindowFocus: true,
@@ -47,16 +45,12 @@ export const useUpdateProfile = () => {
       return updateProfile(payload);
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["me"] });
-      toast.success(data.message || "Profil berhasil diperbarui");
+      queryClient.invalidateQueries({ queryKey: userKeys.me() });
+      showUserSuccess(data.message || "Profil berhasil diperbarui");
     },
     onError: (error) => {
       console.log(error);
-      toast.error(
-        error instanceof AxiosError
-          ? error.response?.data?.message || "Terjadi kesalahan sistem"
-          : (error as Error).message,
-      );
+      showUserError(error);
     },
   });
 };
@@ -66,15 +60,11 @@ export const useUploadImageProfile = () => {
   return useMutation({
     mutationFn: (file: File) => updateProfileImage(file),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["me"] });
-      toast.success(data.message || "Gambar profil berhasil diperbarui");
+      queryClient.invalidateQueries({ queryKey: userKeys.me() });
+      showUserSuccess(data.message || "Gambar profil berhasil diperbarui");
     },
     onError: (error) => {
-      toast.error(
-        error instanceof AxiosError
-          ? error.response?.data?.message || "Terjadi kesalahan sistem"
-          : (error as Error).message,
-      );
+      showUserError(error);
     },
   });
 };
@@ -85,14 +75,14 @@ export const useReviews = (
   limit: number = 10,
 ) => {
   return useQuery({
-    queryKey: ["reviews", userId, page],
+    queryKey: userKeys.reviews(userId, page, limit),
     queryFn: () => getReviewsByUserId(userId, page, limit),
   });
 };
 
 export const useMeReviews = (page: number = 1, limit: number = 10) => {
   return useQuery({
-    queryKey: ["me-reviews", page, limit],
+    queryKey: userKeys.meReviews(page, limit),
     queryFn: () => getMeReviews(page, limit),
     placeholderData: keepPreviousData,
   });
@@ -110,21 +100,17 @@ export const useSubmitJobReviews = () => {
       );
     },
     onSuccess: () => {
-      toast.success("Ulasan berhasil dikirim");
+      showUserSuccess("Ulasan berhasil dikirim");
     },
     onError: (error) => {
-      toast.error(
-        error instanceof AxiosError
-          ? error.response?.data?.message || "Terjadi kesalahan sistem"
-          : (error as Error).message,
-      );
+      showUserError(error);
     },
   });
 };
 
 export const useUserById = (userId: string) => {
   return useQuery({
-    queryKey: ["user", userId],
+    queryKey: userKeys.detail(userId),
     queryFn: () => getUserById(userId),
     staleTime: 5 * 60 * 1000,
   });

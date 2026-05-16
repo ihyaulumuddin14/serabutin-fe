@@ -1,13 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
-import { getBidsOfJob, getClientJobs, getWorkersByJobId } from "../services/clientServices";
+import {
+  getBidsOfJob,
+  getClientJobs,
+  getWorkersByJobId,
+} from "../services/clientServices";
 import type { BidStatus, WorkerToReview } from "../types";
 import { useMe } from "./userHooks";
+import { clientKeys } from "../queries/userQueryKeys";
 
 export const useMeJobs = ({
   page = 1,
   limit = 10,
   categorySlug,
-  status
+  status,
 }: {
   page?: number;
   limit?: number;
@@ -15,40 +20,47 @@ export const useMeJobs = ({
   status?: string;
 }) => {
   const { user } = useMe();
+  const params = { page, limit, categorySlug, status };
 
   return useQuery({
-    queryKey: ["jobs"],
+    queryKey: clientKeys.meJobs(params),
     queryFn: () => getClientJobs(page, limit, categorySlug, status),
-    enabled: user?.role === "client"
-  })
-}
+    enabled: user?.role === "client",
+  });
+};
 
 export const useGetWorkers = (jobId: string, enabled: boolean = true) => {
   const { user } = useMe();
   const isClient = user?.role === "client";
-  
+
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["workers", jobId],
+    queryKey: clientKeys.workers(jobId),
     queryFn: () => getWorkersByJobId(jobId),
     enabled: enabled && !!jobId && isClient,
-    retry: false
-  })
+    retry: false,
+  });
 
   return {
     data: data?.data as WorkerToReview[],
     isLoading,
     isError,
-    error
-  }
-}
+    error,
+  };
+};
 
-export const useGetBidsOfJob = (jobId: string, status?: BidStatus, page?: number, limit?: number) => {
+export const useGetBidsOfJob = (
+  jobId: string,
+  status?: BidStatus,
+  page?: number,
+  limit?: number,
+) => {
   const { user } = useMe();
   const isClient = user?.role === "client";
+  const params = { jobId, status, page, limit };
 
   return useQuery({
-    queryKey: ["bids", jobId],
+    queryKey: clientKeys.bids(params),
     queryFn: () => getBidsOfJob(page, jobId, status, limit),
-    enabled: !!jobId && isClient
-  })
-}
+    enabled: !!jobId && isClient,
+  });
+};
