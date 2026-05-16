@@ -1,0 +1,199 @@
+import { useGetBidsOfJob, useMeJobs } from "@/features/user/hooks/clientHooks";
+import { useMe } from "@/features/user/hooks/userHooks";
+import { useMeBids } from "@/features/user/hooks/workerHooks";
+import { BidsDrawer } from "@/shared/components/NavbarMain";
+import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@/shared/components/ui/button";
+import { useIsMobile } from "@/shared/hooks/useAnimation";
+import type { Bid, JobAssignment } from "@/shared/types/entity.type";
+import { Icon } from "@iconify-icon/react";
+import { Plus } from "lucide-react";
+import { Link } from "react-router";
+import JobOfferSkeleton from "./skeleton/JobOfferSkeleton";
+import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-links";
+import { useState } from "react";
+
+const JobOffer = () => {
+  const { user } = useMe();
+  const isMobile = useIsMobile();
+
+  return (
+    <div className="w-full h-fit bg-card flex flex-col justify-center p-4 sm:p-6 shadow-md rounded-md">
+      {user?.role === "client" && (
+        <Button className="mb-8 font-bold text-base! p-6">
+          <Plus />
+          Posting Kebutuhan Jasa
+        </Button>
+      )}
+
+      <h3 className="text-muted-foreground text-[12px] pl-2 border-l-2 border-primary font-bold tracking-[1.2px]">
+        {user?.role === "client"
+          ? "PENAWARAN DARI PEKERJA"
+          : "STATUS PENAWARAN SAYA"}
+      </h3>
+
+      {user?.role === "client" ? (
+        <JobBidList />
+      ) : (
+        <>
+          <BidList enabledBidsFetch={isMobile} />
+          <BidsDrawer triggerOption="text" />
+        </>
+      )}
+    </div>
+  );
+};
+
+export default JobOffer;
+
+const JobBidList = () => {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const { data, isLoading } = useMeJobs({
+    page,
+    limit,
+    status: "open",
+  });
+  const jobBids: JobAssignment[] = data?.data ?? [];
+
+  return (
+    <>
+      <ol className="flex flex-col gap-3 my-3">
+        {isLoading ? (
+          [...Array(2)].map((_, i) => <JobOfferSkeleton key={i} />)
+        ) : jobBids.length > 0 ? (
+          jobBids.map((job) => (
+            <JobBidItem
+              key={job.id}
+              job={job}
+            />
+          ))
+        ) : (
+          <p className="text-center text-sm text-muted-foreground">
+            Tidak ada pekerjaan yang sedang dibuka.
+          </p>
+        )}
+      </ol>
+
+      {!!data?.meta?.total && (
+        <PaginationWithLinks
+          page={page}
+          pageSize={limit}
+          totalCount={data?.meta?.total || 0}
+          onPageChange={setPage}
+          onPageSizeChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
+        />
+      )}
+    </>
+  );
+};
+
+export const JobBidItem = ({
+  job,
+  className,
+}: {
+  job: JobAssignment;
+  className?: string;
+}) => {
+  const { data } = useGetBidsOfJob(job.id);
+  const totalBids = data?.meta?.total ?? 0;
+
+  return (
+    <li
+      className={`w-full p-3 rounded-lg border border-border bg-background flex flex-col gap-2 ${className}`}
+    >
+      <p className="font-semibold">{job.title}</p>
+      {totalBids > 0 ? (
+        <Link
+          to={`/job-bids/${job.id}`}
+          className="text-primary hover:underline"
+        >
+          Lihat {totalBids} tawaran
+        </Link>
+      ) : (
+        <p className="text-sm text-muted-foreground">Belum ada tawaran.</p>
+      )}
+    </li>
+  );
+};
+
+export const BidList = ({
+  enabledBidsFetch,
+}: {
+  enabledBidsFetch: boolean;
+}) => {
+  const { data, isLoading } = useMeBids({
+    page: 1,
+    limit: 5,
+    enabled: enabledBidsFetch,
+  });
+  const bids = data?.data ?? [];
+
+  return (
+    <ol className="flex flex-col gap-3 mt-3">
+      {isLoading ? (
+        [...Array(2)].map((_, i) => <JobOfferSkeleton key={i} />)
+      ) : bids.length > 0 ? (
+        bids.map(({ bid, job: jobAssignment }) => (
+          <WorkerBidItem
+            key={bid.id}
+            bid={bid}
+            job={jobAssignment}
+          />
+        ))
+      ) : (
+        <p className="text-center text-sm text-muted-foreground">
+          Anda belum melakukan penawaran apapun.
+        </p>
+      )}
+    </ol>
+  );
+};
+
+const WorkerBidItem = ({ bid, job }: { bid: Bid; job: JobAssignment }) => {
+  const handleWhatsappChat = () => {
+    const clientPhoneNumber = job.client.phone;
+    const whatsappUrl = `https://wa.me/${clientPhoneNumber}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
+  return (
+    <li className="w-full p-3 rounded-lg border border-border bg-background flex flex-col gap-2">
+      <p className="font-semibold">{job.title}</p>
+      <Badge
+        variant={
+          bid.status === "accepted"
+            ? "success"
+            : bid.status === "pending"
+              ? "warning"
+              : "destructive"
+        }
+      >
+        {bid.status === "accepted"
+          ? "Diterima"
+          : bid.status === "pending"
+            ? "Menunggu"
+            : bid.status === "rejected"
+              ? "Ditolak"
+              : "Dibatalkan"}
+      </Badge>
+      {bid.status === "accepted" && (
+        <Button
+          className="bg-success-foreground text-primary-foreground hover:bg-success shadow-none"
+          onClick={handleWhatsappChat}
+        >
+          <Icon
+            icon="ic:baseline-whatsapp"
+            width="1.5em"
+            height="1.5em"
+            style={{ color: "#F1EEEA" }}
+          />
+          Chat WhatsApp Klien
+        </Button>
+      )}
+    </li>
+  );
+};
