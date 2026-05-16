@@ -1,31 +1,34 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AxiosError } from "axios";
-import { toast } from "sonner";
-import { loginUser, logoutUser, registerUser, verifyUser } from "../services/authServices";
-import privateApi from "@/shared/api/axiosInstance";
+import {
+  loginUser,
+  logoutUser,
+  registerUser,
+  verifyUser,
+} from "../services/authServices";
 import { useNavigate, useSearchParams } from "react-router";
 import { useAuthStore } from "../stores/authStores";
+import {
+  setAuthAccessToken,
+  showAuthError,
+  showAuthSuccess,
+} from "../utils/authUtils";
+import { userKeys } from "@/features/user/queries/userQueryKeys";
 
 export const useRegister = () => {
   return useMutation({
     mutationFn: registerUser,
     onSuccess: (data) => {
-      toast.dismiss();
-      toast.success(data.message || "Register berhasil");
+      showAuthSuccess(data.message || "Register berhasil");
     },
     onError: (error) => {
-      toast.error(
-        error instanceof AxiosError
-          ? error.response?.data?.message || "Terjadi kesalahan sistem"
-          : (error as Error).message,
-      );
+      showAuthError(error);
     },
   });
 };
 
 export const useLogin = () => {
-  const queryClient = useQueryClient()
-  const setAuth = useAuthStore(state => state.setAuth)
+  const queryClient = useQueryClient();
+  const setAuth = useAuthStore((state) => state.setAuth);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
@@ -33,33 +36,26 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: loginUser,
     onSuccess: async (data) => {
-      toast.dismiss();
-      toast.success(data.message || "Login berhasil");
-      
+      showAuthSuccess(data.message || "Login berhasil");
+
       // Set access token to axios instance for authenticated requests
-      const accessToken = data.data.accessToken;
-      privateApi.defaults.headers.common["Authorization"] =
-        `Bearer ${accessToken}`;
+      setAuthAccessToken(data.data.accessToken);
 
       // optimistic ui
-      queryClient.setQueryData(["me"], (old) => ({
+      queryClient.setQueryData(userKeys.me(), (old) => ({
         ...(old ?? {}),
-        user: data.data.user
+        user: data.data.user,
       }));
       setAuth(data.data.user.role, true);
-      await new Promise(res => {
+      await new Promise((res) => {
         setTimeout(() => {
           res(null);
           navigate(callbackUrl || "/jobs");
-        }, 1000)
+        }, 1000);
       });
     },
     onError: (error) => {
-      toast.error(
-        error instanceof AxiosError
-          ? error.response?.data?.message || "Terjadi kesalahan sistem"
-          : (error as Error).message,
-      );
+      showAuthError(error);
     },
   });
 };
@@ -70,41 +66,34 @@ export const useVerifyUser = () => {
   return useMutation({
     mutationFn: verifyUser,
     onSuccess: async () => {
-      toast.dismiss();
-      toast.success("Verifikasi berhasil, mengalihkan ke halaman login...");
-      new Promise(res => {
+      showAuthSuccess("Verifikasi berhasil, mengalihkan ke halaman login...");
+      new Promise((res) => {
         setTimeout(() => {
-          toast.dismiss();
           res(null);
           navigate("/login");
-        }, 2000)
-      })
+        }, 2000);
+      });
     },
     onError: (error) => {
-      toast.error(
-        error instanceof AxiosError
-          ? error.response?.data?.message || "Terjadi kesalahan sistem"
-          : (error as Error).message,
-      );
+      showAuthError(error);
     },
   });
 };
 
 export const useLogout = () => {
-  const queryClient = useQueryClient()
-  const { logout } = useAuthStore()
+  const queryClient = useQueryClient();
+  const { logout } = useAuthStore();
   const navigate = useNavigate();
 
   return useMutation({
     mutationFn: logoutUser,
     onSuccess: () => {
       queryClient.clear();
-      privateApi.defaults.headers.common["Authorization"] = undefined;
+      setAuthAccessToken();
       logout();
 
       navigate("/", { replace: true });
-      toast.dismiss();
-      toast.success("Logout berhasil");
-    }
+      showAuthSuccess("Logout berhasil");
+    },
   });
-}
+};
