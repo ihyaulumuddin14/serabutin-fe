@@ -12,6 +12,10 @@ import JobsLayout from "./shared/layouts/JobsLayout"
 import { queryClient } from "./shared/lib/queryClient"
 import ProfilePage from "./features/user/pages/ProfilePage"
 import ProfileLayout from "./shared/layouts/ProfileLayout"
+import JobPage from "./features/jobs/pages/JobPage"
+import ClientJobBidPage from "./features/user/pages/ClientJobBidPage"
+import ClientJobBidLayout from "./shared/layouts/ClientJobBidLayout"
+import ClientBidPage from "./features/user/pages/ClientBidPage"
 
 function App() {
   return (
@@ -29,13 +33,17 @@ function App() {
             </Route>
 
             <Route path='/jobs' element={<JobsLayout />}>
-              <Route index element={<h1>Jobs Page</h1>} />
+              <Route index element={<JobPage />} />
             </Route>
 
             <Route element={<ProtectedRoute />}>
               <Route path="/profile" element={<ProfileLayout />}>
                 <Route index element={<ProfilePage />} />
-                <Route path=":userId" element={<ProfilePage />} />
+                {/* <Route path=":userId" element={<ProfilePage />} /> */}
+              </Route>
+              <Route path="/job-bids" element={<ClientJobBidLayout />}>
+                <Route index element={<ClientJobBidPage />} />
+                <Route path=":jobId" element={<ClientBidPage />} />
               </Route>
             </Route>
           </Route>

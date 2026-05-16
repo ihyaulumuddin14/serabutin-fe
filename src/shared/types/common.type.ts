@@ -1,4 +1,4 @@
-export type Status = "open" | "in_progress" | "completed";
+export type JobStatus = "open" | "in_progress" | "completed";
 
 export type ApiResponse<T = unknown> = {
   status: string,
@@ -11,4 +11,10 @@ export type MetaPagination = {
   perPage: number;
   total: number;
   lastPage: number;
+}
+
+export type MetaCursorPagination = {
+  nextCursor: string | null;
+  perPage: number;
+  hasMore: boolean;
 }

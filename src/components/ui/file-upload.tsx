@@ -37,7 +37,7 @@ export const FileUpload = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (newFiles: File[]) => {
-    if (newFiles[0].size > 2 * 1024 * 1024) {
+    if (newFiles[0].size > 5 * 1024 * 1024) {
       toast.error("Ukuran file terlalu besar. Maksimal 2MB.");
       return;
     }
