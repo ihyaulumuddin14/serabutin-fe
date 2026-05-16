@@ -30,24 +30,32 @@ import {
   FilterJobSchema,
   type FilterJobCredentials,
 } from "../schemas/filterJobSchemas";
+import {
+  buildJobFilterSearchParams,
+  parseJobFilterParams,
+} from "../utils/jobFilterParams";
 
 const JobFilter = ({
   className,
-  setIsOpenFilterDrawer
+  setIsOpenFilterDrawer,
 }: {
-  className?: string,
-  setIsOpenFilterDrawer?: (open: boolean) => void,
+  className?: string;
+  setIsOpenFilterDrawer?: (open: boolean) => void;
 }) => {
-  const { data: regencies } = useRegencies();
-  const { data: categories } = useCategory();
+  const {
+    data: regencies,
+    isLoading: isRegenciesLoading,
+    isError: isRegenciesError,
+    error: regenciesError,
+  } = useRegencies();
+  const {
+    data: categories,
+    isLoading: isCategoriesLoading,
+    isError: isCategoriesError,
+    error: categoriesError,
+  } = useCategory();
   const [searchParams] = useSearchParams();
-  const categorySlug = searchParams.get("category");
-  const city = searchParams.get("city");
-  const budgetMin = searchParams.get("budgetMin");
-  const budgetMax = searchParams.get("budgetMax");
-  const dateFrom = searchParams.get("dateFrom");
-  const dateTo = searchParams.get("dateTo");
-  const q = searchParams.get("q");
+  const filterParams = parseJobFilterParams(searchParams);
   const navigate = useNavigate();
 
   const {
@@ -60,31 +68,20 @@ const JobFilter = ({
     resolver: zodResolver(FilterJobSchema) as Resolver<FilterJobCredentials>,
     mode: "onChange",
     defaultValues: {
-      categorySlug: categorySlug ?? undefined,
-      city: city ?? undefined,
-      budgetMin: budgetMin ? Number(budgetMin) : undefined,
-      budgetMax: budgetMax ? Number(budgetMax) : undefined,
-      dateFrom: dateFrom ?? undefined,
-      dateTo: dateTo ?? undefined,
-      q: q ?? undefined,
+      categorySlug: filterParams.categorySlug ?? undefined,
+      city: filterParams.city ?? undefined,
+      budgetMin: filterParams.budgetMin ?? undefined,
+      budgetMax: filterParams.budgetMax ?? undefined,
+      dateFrom: filterParams.dateFrom ?? undefined,
+      dateTo: filterParams.dateTo ?? undefined,
+      q: filterParams.q ?? undefined,
     },
   });
   const dateFromValue = useWatch({ control, name: "dateFrom" });
   const dateToValue = useWatch({ control, name: "dateTo" });
 
   const handleFilterSubmit = (data: FilterJobCredentials) => {
-    const params = new URLSearchParams();
-    if (data.categorySlug) params.set("category", data.categorySlug);
-    if (data.city) params.set("city", data.city);
-    if (data.budgetMin !== undefined)
-      params.set("budgetMin", String(data.budgetMin));
-    if (data.budgetMax !== undefined)
-      params.set("budgetMax", String(data.budgetMax));
-    if (data.dateFrom) params.set("dateFrom", data.dateFrom);
-    if (data.dateTo) params.set("dateTo", data.dateTo);
-    if (data.q) params.set("q", data.q);
-
-    const queryString = params.toString();
+    const queryString = buildJobFilterSearchParams(data).toString();
     const newUrl = `${window.location.pathname}${queryString ? `?${queryString}` : ""}`;
     navigate(newUrl);
   };
@@ -103,7 +100,9 @@ const JobFilter = ({
   };
 
   return (
-    <div className={`w-full h-fit bg-card flex flex-col justify-center p-4 sm:p-6 shadow-md rounded-md ${className}`}>
+    <div
+      className={`w-full h-fit bg-card flex flex-col justify-center p-4 sm:p-6 shadow-md rounded-md ${className}`}
+    >
       <h3 className="text-muted-foreground text-[12px] pl-2 border-l-2 border-primary font-bold tracking-[1.2px]">
         FILTER PENCARIAN
       </h3>
@@ -132,7 +131,9 @@ const JobFilter = ({
                       format(dateFromValue, "MM/dd/yyyy")
                     )
                   ) : (
-                    <span className="text-muted-foreground">mm/dd/yyyy - mm/dd/yyyy</span>
+                    <span className="text-muted-foreground">
+                      mm/dd/yyyy - mm/dd/yyyy
+                    </span>
                   )}
                   <CalendarIcon color="#9A8F85" />
                 </Button>
@@ -236,14 +237,32 @@ const JobFilter = ({
                     <SelectValue placeholder="Pilih kota/kabupaten" />
                   </SelectTrigger>
                   <SelectContent position="popper">
-                    {regencies?.map((regency) => (
+                    {isRegenciesLoading ? (
                       <SelectItem
-                        key={regency.kode}
-                        value={regency.nama}
+                        value="loading"
+                        disabled
                       >
-                        {regency.nama}
+                        Memuat kota/kabupaten...
                       </SelectItem>
-                    ))}
+                    ) : isRegenciesError ? (
+                      <SelectItem
+                        value="error"
+                        disabled
+                      >
+                        {regenciesError instanceof Error
+                          ? regenciesError.message
+                          : "Gagal memuat kota/kabupaten."}
+                      </SelectItem>
+                    ) : (
+                      regencies?.map((regency) => (
+                        <SelectItem
+                          key={regency.kode}
+                          value={regency.nama}
+                        >
+                          {regency.nama}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               )}
@@ -264,15 +283,32 @@ const JobFilter = ({
                     <SelectValue placeholder="Pilih kategori jasa" />
                   </SelectTrigger>
                   <SelectContent position="popper">
-                    {categories?.map((category) => (
+                    {isCategoriesLoading ? (
                       <SelectItem
-                        key={category.id}
-                        value={category.slug}
+                        value="loading"
+                        disabled
                       >
-                        {category.name}
+                        Memuat kategori...
                       </SelectItem>
-                    ))}
-                    {categories?.length === 0 && (
+                    ) : isCategoriesError ? (
+                      <SelectItem
+                        value="error"
+                        disabled
+                      >
+                        {categoriesError instanceof Error
+                          ? categoriesError.message
+                          : "Gagal memuat kategori."}
+                      </SelectItem>
+                    ) : categories?.length ? (
+                      categories.map((category) => (
+                        <SelectItem
+                          key={category.id}
+                          value={category.slug}
+                        >
+                          {category.name}
+                        </SelectItem>
+                      ))
+                    ) : (
                       <p className="text-center text-sm text-muted-foreground p-4">
                         Tidak ada kategori jasa tersedia.
                       </p>
@@ -284,7 +320,14 @@ const JobFilter = ({
           </Field>
 
           <Field>
-            <Button type="submit" onClick={() => setIsOpenFilterDrawer && setIsOpenFilterDrawer(false)}>Terapkan Filter</Button>
+            <Button
+              type="submit"
+              onClick={() =>
+                setIsOpenFilterDrawer && setIsOpenFilterDrawer(false)
+              }
+            >
+              Terapkan Filter
+            </Button>
             <Button
               type="button"
               variant="outline"

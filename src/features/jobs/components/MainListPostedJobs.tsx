@@ -9,21 +9,13 @@ import { useSearchParams } from "react-router";
 import JobFilter from "./JobFilter";
 import JobSearchFilter from "./JobSearchFilter";
 import ListPostedJobs from "./ListPostedJobs";
+import { parseJobFilterParams } from "../utils/jobFilterParams";
 
 const MainListPostedJobs = () => {
   const [searchParams] = useSearchParams();
   const [isOpenFilterDrawer, setIsOpenFilterDrawer] = useState(false);
-  const q = searchParams.get("q") || undefined;
-  const categorySlug = searchParams.get("category") || undefined;
-  const city = searchParams.get("city") || undefined;
-  const budgetMin = searchParams.get("budgetMin")
-    ? parseInt(searchParams.get("budgetMin") as string)
-    : undefined;
-  const budgetMax = searchParams.get("budgetMax")
-    ? parseInt(searchParams.get("budgetMax") as string)
-    : undefined;
-  const dateFrom = searchParams.get("dateFrom") || undefined;
-  const dateTo = searchParams.get("dateTo") || undefined;
+  const { q, categorySlug, city, budgetMin, budgetMax, dateFrom, dateTo } =
+    parseJobFilterParams(searchParams);
 
   return (
     <>

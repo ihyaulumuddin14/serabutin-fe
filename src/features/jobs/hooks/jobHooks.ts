@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
+import { jobKeys, type JobListFilters } from "../queries/jobQueryKeys";
 import { getCategories, getJobById, getJobs } from "../services/jobServices";
 
 export const useCategory = () => {
   return useQuery({
-    queryKey: ["category"],
-    queryFn: getCategories
-  })
-}
+    queryKey: jobKeys.categories(),
+    queryFn: getCategories,
+  });
+};
 
 export const useGetJobs = ({
   cursor,
@@ -17,40 +18,36 @@ export const useGetJobs = ({
   budgetMax,
   dateFrom,
   dateTo,
-  q
-}: {
-  limit?: number,
-  page?: number,
-  categorySlug?: string,
-  cursor?: string,
-  city?: string,
-  budgetMin?: number,
-  budgetMax?: number,
-  dateFrom?: string,
-  dateTo?: string,
-  q?: string
-}) => {
-  return useQuery({
-    queryKey: ["jobs", cursor, categorySlug, city, budgetMin, budgetMax, dateFrom, dateTo, q],
-    queryFn: () => getJobs({
-      cursor,
-      limit,
-      categorySlug,
-      city,
-      budgetMin,
-      budgetMax,
-      dateFrom,
-      dateTo,
-      q
-    }),
-    retry: false
-  })
-}
+  q,
+}: JobListFilters) => {
+  const filters: JobListFilters = {
+    cursor,
+    limit,
+    categorySlug,
+    city,
+    budgetMin,
+    budgetMax,
+    dateFrom,
+    dateTo,
+    q,
+  };
 
-export const useGetJobById = (jobId: string = "fe463126-5d81-44b8-a798-56032046fbd2") => {
   return useQuery({
-    queryKey: ["job", jobId],
+    queryKey: jobKeys.listCursor(filters),
+    queryFn: () =>
+      getJobs({
+        ...filters,
+      }),
+    retry: false,
+  });
+};
+
+export const useGetJobById = (
+  jobId: string = "fe463126-5d81-44b8-a798-56032046fbd2",
+) => {
+  return useQuery({
+    queryKey: jobKeys.detail(jobId),
     queryFn: () => getJobById(jobId),
-    retry: false
-  })
-}
+    retry: false,
+  });
+};
