@@ -17,43 +17,46 @@ import ClientJobBidPage from "./features/user/pages/ClientJobBidPage"
 import ClientJobBidLayout from "./shared/layouts/ClientJobBidLayout"
 import ClientBidPage from "./features/user/pages/ClientBidPage"
 import ClientPostJobPage from "./features/jobs/pages/ClientPostJobPage"
+import { TooltipProvider } from "./shared/components/ui/tooltip"
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Toaster position="top-center" />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<InitAuth />}>
-            <Route path='/' element={<Navigate to="/jobs" replace/>}/>
+      <TooltipProvider>
+        <Toaster position="top-center" />
+        <BrowserRouter>
+          <Routes>
+            <Route element={<InitAuth />}>
+              <Route path='/' element={<Navigate to="/jobs" replace/>}/>
 
-            <Route element={<AuthLayout />}>
-              <Route path='verify-email' element={<VerifyPage />}/>
-              <Route path='register' element={<RegisterPage />}/>
-              <Route path='login' element={<LoginPage />}/>
-            </Route>
+              <Route element={<AuthLayout />}>
+                <Route path='verify-email' element={<VerifyPage />}/>
+                <Route path='register' element={<RegisterPage />}/>
+                <Route path='login' element={<LoginPage />}/>
+              </Route>
 
-            <Route path='/jobs' element={<JobsLayout />}>
-              <Route index element={<JobPage />} />
-            </Route>
+              <Route path='/jobs' element={<JobsLayout />}>
+                <Route index element={<JobPage />} />
+              </Route>
 
-            <Route path="/profile" element={<ProfileLayout />}>
-              <Route path=":userId" element={<ProfilePage />} />
-            </Route>
-
-            <Route element={<ProtectedRoute />}>
               <Route path="/profile" element={<ProfileLayout />}>
-                <Route index element={<ProfilePage />} />
+                <Route path=":userId" element={<ProfilePage />} />
               </Route>
-              <Route element={<ClientJobBidLayout />}>
-                <Route path="/job-bids" element={<ClientJobBidPage />} />
-                <Route path="/job-bids/:jobId" element={<ClientBidPage />} />
-                <Route path="/job-post" element={<ClientPostJobPage />} />
+
+              <Route element={<ProtectedRoute />}>
+                <Route path="/profile" element={<ProfileLayout />}>
+                  <Route index element={<ProfilePage />} />
+                </Route>
+                <Route element={<ClientJobBidLayout />}>
+                  <Route path="/job-bids" element={<ClientJobBidPage />} />
+                  <Route path="/job-bids/:jobId" element={<ClientBidPage />} />
+                  <Route path="/job-post" element={<ClientPostJobPage />} />
+                </Route>
               </Route>
             </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
     </QueryClientProvider>
   )
 }
