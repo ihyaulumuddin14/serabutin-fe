@@ -38,7 +38,7 @@ export const FileUpload = ({
 
   const handleFileChange = (newFiles: File[]) => {
     if (newFiles[0].size > 5 * 1024 * 1024) {
-      toast.error("Ukuran file terlalu besar. Maksimal 2MB.");
+      toast.error("Ukuran file terlalu besar. Maksimal 5MB.");
       return;
     }
     setFile(newFiles[0] ?? null);

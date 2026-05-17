@@ -105,7 +105,7 @@ const ProfileImageEdit = () => {
           <DialogHeader>
             <DialogTitle>Ganti Foto Profil</DialogTitle>
             <DialogDescription className="text-sm text-card-foreground">
-              *Ukuran file maksimum adalah 2MB
+              *Ukuran file maksimum adalah 5MB
             </DialogDescription>
           </DialogHeader>
 
