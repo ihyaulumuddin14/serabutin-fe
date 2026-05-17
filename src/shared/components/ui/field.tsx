@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 
-import { cn } from "@/shared/lib/utils/index";
+import { cn } from "@/shared/lib/utils";
 import { Label } from "@/shared/components/ui/label";
 import { Separator } from "@/shared/components/ui/separator";
 
@@ -41,7 +41,7 @@ function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="field-group"
       className={cn(
-        "group/field-group @container/field-group flex w-full flex-col gap-7 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4",
+        "group/field-group @container/field-group flex w-full flex-col gap-5 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4",
         className,
       )}
       {...props}
@@ -77,7 +77,7 @@ function Field({
       role="group"
       data-slot="field"
       data-orientation={orientation}
-      className={cn(fieldVariants({ orientation }), className)}
+      className={cn(fieldVariants({ orientation }), "gap-1.5", className)}
       {...props}
     />
   );
@@ -97,15 +97,10 @@ function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 type FieldLabelProps = React.ComponentProps<typeof Label> & {
-  icon?: React.ReactNode
-}
+  icon?: React.ReactNode;
+};
 
-function FieldLabel({
-  className,
-  icon,
-  children,
-  ...props
-}: FieldLabelProps) {
+function FieldLabel({ className, icon, children, ...props }: FieldLabelProps) {
   return (
     <Label
       data-slot="field-label"
@@ -117,15 +112,12 @@ function FieldLabel({
         "*:data-[slot=field]:p-3",
         "dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10",
         "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col text-sm",
-        className
+        "text-secondary-foreground has-[>[data-slot=field]]:text-foreground",
+        className,
       )}
       {...props}
     >
-      {icon && (
-        <span className="flex items-center justify-center">
-          {icon}
-        </span>
-      )}
+      {icon && <span className="flex items-center justify-center">{icon}</span>}
 
       {children}
     </Label>
