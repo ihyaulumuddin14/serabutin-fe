@@ -50,7 +50,7 @@ export const useGetJobs = ({
 };
 
 export const useGetJobById = (
-  jobId: string = "fe463126-5d81-44b8-a798-56032046fbd2",
+  jobId: string,
 ) => {
   return useQuery({
     queryKey: jobKeys.detail(jobId),
