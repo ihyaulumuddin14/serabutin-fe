@@ -8,7 +8,13 @@ import {
   DialogTitle,
 } from "@/shared/components/ui/dialog";
 import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-links";
-import type { JobAssignment, Profile, User } from "@/shared/types/entity.type";
+import type {
+  JobAssignment,
+  Profile,
+  User,
+  WorkerAssignment,
+  JobSummary,
+} from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
 import { useState } from "react";
 import { useParams } from "react-router";
@@ -65,7 +71,7 @@ const ProfileContentJobs = ({ sessionUser }: ProfileContentJobsProps) => {
     isError: isWorkerJobsError,
     error: workerJobsError,
   } = useMeAssignments(page, limit);
-  const dataAssignments = (workerData?.data ?? []) as JobAssignment[];
+  const dataAssignments = (workerData?.data ?? []) as WorkerAssignment[];
 
   const {
     data: userJobsData,
@@ -92,7 +98,7 @@ const ProfileContentJobs = ({ sessionUser }: ProfileContentJobsProps) => {
     enabled: !isOwnProfile && targetRole === "worker",
   });
   const dataUserAssignments = (userAssignmentsData?.data ??
-    []) as JobAssignment[];
+    []) as WorkerAssignment[];
 
   const isClient = targetRole === "client";
   const jobs = isClient
@@ -152,9 +158,10 @@ const ProfileContentJobs = ({ sessionUser }: ProfileContentJobsProps) => {
         ) : jobs.length > 0 ? (
           jobs.map((item) => (
             <JobItem
-              key={item.id}
-              job={item}
+              key={"job" in item ? item.assignmentId : item.id}
+              item={item}
               canEditStatus={isOwnProfile && isClient}
+              isOwnProfile={isOwnProfile}
             />
           ))
         ) : (
@@ -183,16 +190,32 @@ const ProfileContentJobs = ({ sessionUser }: ProfileContentJobsProps) => {
 export default ProfileContentJobs;
 
 const JobItem = ({
-  job,
+  item,
   canEditStatus,
+  isOwnProfile,
 }: {
-  job: JobAssignment;
+  item: JobAssignment | WorkerAssignment;
   canEditStatus: boolean;
+  isOwnProfile: boolean;
 }) => {
-  const [dialogData, setDialogData] = useState<{
-    type: "detail" | "rating" | "edit" | "delete";
-    job: JobAssignment;
-  } | null>(null);
+  console.log("item: ", item);
+
+  const isWorkerAssignment = (value: JobAssignment | WorkerAssignment): value is WorkerAssignment =>
+    "job" in value;
+
+  const job = isWorkerAssignment(item) ? item.job : item;
+  const clientJob = !isWorkerAssignment(item) ? item : null;
+  const assignmentIds = isWorkerAssignment(item)
+    ? [item.assignmentId]
+    : item.assignments.map((assignment) => assignment.assignmentId);
+  const hasReviewed = isWorkerAssignment(item)
+    ? item.hasReviewed
+    : item.assignments.every((assignment) => assignment.hasReviewed);
+  const [dialogData, setDialogData] = useState<
+    | { type: "detail" | "rating"; job: JobSummary; assignmentId?: string }
+    | { type: "edit" | "delete"; job: JobAssignment }
+    | null
+  >(null);
   const { mutate: updateJobStatus, isPending } = useUpdateJobStatus();
   const startDate = new Date(job.startAt);
   const deadlineDate = new Date(job.deadlineAt);
@@ -200,9 +223,9 @@ const JobItem = ({
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const statusVariant =
     job.status === "open"
-      ? "success"
-      : job.status === "in_progress"
-        ? "warning"
+      ? "professional"
+      : job.status === "completed"
+        ? "success"
         : "error";
   const statusLabel =
     job.status === "open"
@@ -212,9 +235,18 @@ const JobItem = ({
         : "Selesai";
 
   const statusOptions: Array<{ value: JobStatus; label: string }> = [
+    { value: "in_progress", label: "Sedang dikerjakan" },
     { value: "completed", label: "Selesai" },
     { value: "cancelled", label: "Dibatalkan" },
   ];
+
+  const canRate =
+    isOwnProfile &&
+    job.status === "completed" &&
+    assignmentIds.length > 0 &&
+    !hasReviewed;
+
+  const canManageJob = canEditStatus && !!clientJob;
 
   return (
     <>
@@ -266,8 +298,16 @@ const JobItem = ({
 
         {/* action */}
         <div className="w-full flex justify-end gap-3">
-          {job.status === "completed" && (
-            <Button onClick={() => setDialogData({ type: "rating", job })}>
+          {canRate && (
+            <Button
+              onClick={() =>
+                setDialogData({
+                  type: "rating",
+                  job,
+                  assignmentId: assignmentIds[0],
+                })
+              }
+            >
               Beri Penilaian
             </Button>
           )}
@@ -288,6 +328,7 @@ const JobItem = ({
             if (!open) setDialogData(null);
           }}
           job={dialogData.job}
+          assignmentId={dialogData.assignmentId}
         />
       )}
 
@@ -303,9 +344,9 @@ const JobItem = ({
             <DialogHeader>
               <DialogTitle className="flex flex-col gap-2">
                 <Badge>{dialogData.job.category.name}</Badge>
-                <h3 className="font-semibold text-lg sm:text-xl line-clamp-2">
+                <span className="font-semibold text-lg sm:text-xl line-clamp-2">
                   {dialogData.job.title}
-                </h3>
+                </span>
               </DialogTitle>
             </DialogHeader>
 
@@ -362,28 +403,33 @@ const JobItem = ({
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="secondary"
-                onClick={() =>
-                  setDialogData({ type: "edit", job: dialogData.job })
-                }
-              >
-                Edit
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() =>
-                  setDialogData({ type: "delete", job: dialogData.job })
-                }
-              >
-                Hapus
-              </Button>
+              {canManageJob && job.status === "open" && (
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      clientJob && setDialogData({ type: "edit", job: clientJob })
+                    }
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() =>
+                      clientJob &&
+                        setDialogData({ type: "delete", job: clientJob })
+                    }
+                  >
+                    Hapus
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
 
-      {dialogData?.type === "edit" && (
+        {dialogData?.type === "edit" && (
         <DialogJobEdit
           isDialogJobEditOpen={dialogData?.type === "edit"}
           setIsDialogJobEditOpen={(open: boolean) => {
@@ -393,7 +439,7 @@ const JobItem = ({
         />
       )}
 
-      {dialogData?.type === "delete" && (
+        {dialogData?.type === "delete" && (
         <DialogJobDelete
           isDialogJobDeleteOpen={dialogData?.type === "delete"}
           setIsDialogJobDeleteOpen={(open: boolean) => {
