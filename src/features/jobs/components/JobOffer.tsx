@@ -5,13 +5,19 @@ import { BidsDrawer } from "@/shared/components/NavbarMain";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import { useIsMobile } from "@/shared/hooks/useAnimation";
-import type { Bid, JobAssignment } from "@/shared/types/entity.type";
+import type {
+  Bid,
+  JobAssignment,
+  Profile,
+  User,
+} from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
 import { Plus } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import JobOfferSkeleton from "./skeleton/JobOfferSkeleton";
 import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-links";
 import { useState } from "react";
+import { DialogBidDelete } from "./DialogBidDelete";
 
 const JobOffer = () => {
   const navigate = useNavigate();
@@ -20,7 +26,7 @@ const JobOffer = () => {
 
   const handlePostJob = () => {
     navigate("/job-post");
-  }
+  };
 
   if (isLoading) {
     return (
@@ -49,7 +55,10 @@ const JobOffer = () => {
   return (
     <div className="w-full h-fit bg-card flex flex-col justify-center p-4 sm:p-6 shadow-md rounded-md">
       {user?.role === "client" && (
-        <Button className="mb-8 font-bold text-base! p-6" onClick={handlePostJob}>
+        <Button
+          className="mb-8 font-bold text-base! p-6"
+          onClick={handlePostJob}
+        >
           <Plus />
           Posting Kebutuhan Jasa
         </Button>
@@ -65,7 +74,7 @@ const JobOffer = () => {
         <JobBidList />
       ) : (
         <>
-          <BidList enabledBidsFetch={isMobile} />
+          <BidList enabledBidsFetch={!isMobile} page={1} limit={1}/>
           <BidsDrawer triggerOption="text" />
         </>
       )}
@@ -77,7 +86,7 @@ export default JobOffer;
 
 const JobBidList = () => {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(1);
   const { data, isLoading, isError, error } = useMeJobs({
     page,
     limit,
@@ -163,12 +172,16 @@ export const JobBidItem = ({
 
 export const BidList = ({
   enabledBidsFetch,
+  page,
+  limit,
 }: {
   enabledBidsFetch: boolean;
+  page: number;
+  limit: number;
 }) => {
   const { data, isLoading, isError, error } = useMeBids({
-    page: 1,
-    limit: 5,
+    page,
+    limit,
     enabled: enabledBidsFetch,
   });
   const bids = data?.data ?? [];
@@ -178,69 +191,99 @@ export const BidList = ({
       : "Terjadi kesalahan saat memuat penawaran.";
 
   return (
-    <ol className="flex flex-col gap-3 mt-3">
-      {isLoading ? (
-        [...Array(2)].map((_, i) => <JobOfferSkeleton key={i} />)
-      ) : isError ? (
-        <p className="text-center text-sm text-destructive">{errorMessage}</p>
-      ) : bids.length > 0 ? (
-        bids.map(({ bid, job: jobAssignment }) => (
-          <WorkerBidItem
-            key={bid.id}
-            bid={bid}
-            job={jobAssignment}
-          />
-        ))
-      ) : (
-        <p className="text-center text-sm text-muted-foreground">
-          Anda belum melakukan penawaran apapun.
-        </p>
-      )}
-    </ol>
+    <>
+      <ol className="flex flex-col gap-3 mt-3">
+        {isLoading ? (
+          [...Array(2)].map((_, i) => <JobOfferSkeleton key={i} />)
+        ) : isError ? (
+          <p className="text-center text-sm text-destructive">{errorMessage}</p>
+        ) : bids.length > 0 ? (
+          bids.map(({ bid, job: jobAssignment, client }) => (
+            <WorkerBidItem
+              client={client}
+              key={bid.id}
+              bid={bid}
+              job={jobAssignment}
+            />
+          ))
+        ) : (
+          <p className="text-center text-sm text-muted-foreground">
+            Anda belum melakukan penawaran apapun.
+          </p>
+        )}
+      </ol>
+    </>
   );
 };
 
-const WorkerBidItem = ({ bid, job }: { bid: Bid; job: JobAssignment }) => {
+const WorkerBidItem = ({
+  bid,
+  job,
+  client,
+}: {
+  bid: Bid;
+  job: JobAssignment;
+  client: Omit<User, "email" | "isVerified" | "isActive"> &
+    Partial<Pick<Profile, "phone">>;
+}) => {
+  const [isDialogBidDeleteOpen, setIsDialogBidDeleteOpen] = useState(false);
   const handleWhatsappChat = () => {
-    const clientPhoneNumber = job.client.phone;
+    const clientPhoneNumber = client.phone;
     const whatsappUrl = `https://wa.me/${clientPhoneNumber}`;
     window.open(whatsappUrl, "_blank");
   };
 
   return (
-    <li className="w-full p-3 rounded-lg border border-border bg-background flex flex-col gap-2">
-      <p className="font-semibold">{job.title}</p>
-      <Badge
-        variant={
-          bid.status === "accepted"
-            ? "success"
-            : bid.status === "pending"
-              ? "warning"
-              : "destructive"
-        }
-      >
-        {bid.status === "accepted"
-          ? "Diterima"
-          : bid.status === "pending"
-            ? "Menunggu"
-            : bid.status === "rejected"
-              ? "Ditolak"
-              : "Dibatalkan"}
-      </Badge>
-      {bid.status === "accepted" && (
-        <Button
-          className="bg-success-foreground text-primary-foreground hover:bg-success shadow-none"
-          onClick={handleWhatsappChat}
+    <>
+      <li className="w-full p-3 rounded-lg border border-border bg-background flex flex-col gap-2">
+        <p className="font-semibold">{job.title}</p>
+        <Badge
+          variant={
+            bid.status === "accepted"
+              ? "success"
+              : bid.status === "pending"
+                ? "warning"
+                : "destructive"
+          }
         >
-          <Icon
-            icon="ic:baseline-whatsapp"
-            width="1.5em"
-            height="1.5em"
-            style={{ color: "#F1EEEA" }}
-          />
-          Chat WhatsApp Klien
-        </Button>
-      )}
-    </li>
+          {bid.status === "accepted"
+            ? "Diterima"
+            : bid.status === "pending"
+              ? "Menunggu"
+              : bid.status === "rejected"
+                ? "Ditolak"
+                : "Dibatalkan"}
+        </Badge>
+        {bid.status === "accepted" ? (
+          <Button
+            className="bg-success-foreground text-primary-foreground hover:bg-success shadow-none"
+            onClick={handleWhatsappChat}
+          >
+            <Icon
+              icon="ic:baseline-whatsapp"
+              width="1.5em"
+              height="1.5em"
+              style={{ color: "#F1EEEA" }}
+            />
+            Chat WhatsApp Klien
+          </Button>
+        ) : (
+          bid.status === "pending" && (
+            <Button
+              variant={"destructive"}
+              onClick={() => setIsDialogBidDeleteOpen(true)}
+            >
+              Batalkan Penawaran
+            </Button>
+          )
+        )}
+      </li>
+      <DialogBidDelete
+        bid={bid}
+        job={job}
+        isDialogBidDeleteOpen={isDialogBidDeleteOpen}
+        setIsDialogBidDeleteOpen={setIsDialogBidDeleteOpen}
+      />
+    </>
   );
 };
