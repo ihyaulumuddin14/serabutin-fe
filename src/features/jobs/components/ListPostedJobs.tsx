@@ -1,10 +1,8 @@
-import { toCamel } from "@/shared/lib/case";
-import type { ApiResponse } from "@/shared/types/common.type";
 import type { JobAssignment } from "@/shared/types/entity.type";
 import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
 import { useCallback, useRef } from "react";
-import type { JobsInfiniteResponse } from "../services/jobServices";
+import { jobKeys } from "../queries/jobQueryKeys";
+import { getJobs, type JobsInfiniteResponse } from "../services/jobServices";
 import { PostedJobItem } from "./PostedJobItem";
 import PostedJobItemSkeleton from "./skeleton/PostedJobItemSkeleton";
 
@@ -35,13 +33,12 @@ const ListPostedJobs = ({
     error,
   } = useInfiniteQuery<
     JobsInfiniteResponse, // 1. TQueryFnData
-    AxiosError<ApiResponse>, // 2. TError (Tipe error)
+    Error, // 2. TError (Tipe error)
     InfiniteData<JobsInfiniteResponse, string | null>, // 3. TData (Bentuk akhir data.pages, wajib menyertakan tipe pageParam)
-    unknown[], // 4. TQueryKey
+    readonly unknown[], // 4. TQueryKey
     string | null // 5. TPageParam
   >({
-    queryKey: [
-      "jobs",
+    queryKey: jobKeys.list({
       categorySlug,
       city,
       budgetMin,
@@ -49,28 +46,19 @@ const ListPostedJobs = ({
       dateFrom,
       dateTo,
       q,
-    ],
+    }),
     queryFn: async ({ pageParam }) => {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/jobs`, {
-        params: {
-          cursor: pageParam,
-          limit: 10,
-          category_slug: categorySlug,
-          city,
-          budget_min: budgetMin,
-          budget_max: budgetMax,
-          date_from: dateFrom,
-          date_to: dateTo,
-          q,
-        },
+      return getJobs({
+        cursor: pageParam ?? undefined,
+        limit: 10,
+        categorySlug,
+        city,
+        budgetMin,
+        budgetMax,
+        dateFrom,
+        dateTo,
+        q,
       });
-
-      if (response.data.status !== "success")
-        throw new Error(
-          response.data?.message || "Gagal mengambil data pekerjaan",
-        );
-
-      return toCamel(response.data) as JobsInfiniteResponse;
     },
 
     initialPageParam: null,
@@ -86,7 +74,7 @@ const ListPostedJobs = ({
   const jobs: JobAssignment[] = data?.pages?.flatMap((page) => page.data) ?? [];
 
   const errorMessage = isError
-    ? (error?.response?.data?.message ?? "Terjadi kesalahan sistem")
+    ? (error?.message ?? "Terjadi kesalahan sistem")
     : "";
 
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -133,7 +121,11 @@ const ListPostedJobs = ({
 
       {isPending || (isFetchingNextPage && hasNextPage) ? (
         [...Array(3)].map((_, index) => <PostedJobItemSkeleton key={index} />)
-      ) : <p className="w-full p-6 rounded-lg text-sm text-center text-muted-foreground">Kamu sudah mencapai akhir.</p>}
+      ) : errorMessage ? null : (
+        <p className="w-full p-6 rounded-lg text-sm text-center text-muted-foreground">
+          Kamu sudah mencapai akhir.
+        </p>
+      )}
     </ol>
   );
 };

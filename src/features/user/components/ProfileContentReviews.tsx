@@ -1,25 +1,72 @@
 import { Badge } from "@/shared/components/ui/badge";
 import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-links";
-import type { Review } from "@/shared/types/entity.type";
+import type { Profile, Review, User } from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
 import { useState } from "react";
-import { useMe, useMeReviews } from "../hooks/userHooks";
-import type { WorkerProfile } from "../types";
+import { useParams } from "react-router";
+import type { CategoryRating, WorkerProfile } from "../types";
 import { useIsMobile } from "@/shared/hooks/useAnimation";
 import ReviewItemSkeleton from "./skeleton/ReviewItemSkeleton";
+import { useMeReviews, useUserById, useUserReviews } from "../hooks/userHooks";
 
-const ProfileContentReviews = () => {
+type ProfileContentReviewsProps = {
+  sessionUser: User | null;
+  sessionProfile: Profile | null;
+};
+
+const ProfileContentReviews = ({
+  sessionUser,
+  sessionProfile,
+}: ProfileContentReviewsProps) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const { data, isPending: isReviewsPending } = useMeReviews(page, limit);
-  const { user, profile } = useMe();
-  const dataReviews = (data?.data ?? []) as Review[];
-  const workerProfile = profile as WorkerProfile | null;
-  const categoryRatings = workerProfile?.categoryRatings ?? [];
+  const { userId } = useParams();
+  const isOwnProfile = !userId || userId === sessionUser?.id;
+  const {
+    data: viewedUserData,
+    isLoading: isViewedUserLoading,
+    isError: isViewedUserError,
+    error: viewedUserError,
+  } = useUserById(userId || "", !isOwnProfile);
+  const targetUser = isOwnProfile ? sessionUser : viewedUserData?.user;
+  const targetProfile = isOwnProfile ? sessionProfile : viewedUserData?.profile;
 
+  const {
+    data: meReviewsData,
+    isPending: isMeReviewsPending,
+    isError: isMeReviewsError,
+    error: meReviewsError,
+  } = useMeReviews(page, limit);
+  const userIdForReviews = isOwnProfile ? "" : userId || "";
+  const {
+    data: userReviewsData,
+    isPending: isUserReviewsPending,
+    isError: isUserReviewsError,
+    error: userReviewsError,
+  } = useUserReviews(userIdForReviews, page, limit);
+
+  const reviews = ((isOwnProfile
+    ? meReviewsData?.data
+    : userReviewsData?.data) ?? []) as Review[];
+  const workerProfile = targetProfile as WorkerProfile | null;
+  const categoryRatings: CategoryRating[] =
+    workerProfile?.categoryRatings ?? [];
+  const isWorker = targetUser?.role === "worker";
+  const isPending = isOwnProfile
+    ? isMeReviewsPending
+    : isViewedUserLoading || isUserReviewsPending;
+  const isError = isOwnProfile
+    ? isMeReviewsError
+    : isViewedUserError || isUserReviewsError;
+  const error = isOwnProfile
+    ? meReviewsError
+    : userReviewsError || viewedUserError;
+  const totalCount = isOwnProfile
+    ? meReviewsData?.meta?.total
+    : userReviewsData?.meta?.total;
   return (
     <>
-      {user?.role === "worker" && categoryRatings.length > 0 && (
+      {isWorker && categoryRatings.length > 0 && (
         <div className="w-full overflow-x-auto snap-mandatory snap-x scroll-smooth">
           <ul className="min-w-fit flex gap-4 items-start justify-start py-1 snap-">
             {categoryRatings.map((item) => (
@@ -35,10 +82,16 @@ const ProfileContentReviews = () => {
 
       {/* review list */}
       <div className="w-full flex flex-col gap-2">
-        {isReviewsPending ? (
+        {isPending ? (
           [...Array(2)].map((_, i) => <ReviewItemSkeleton key={i} />)
-        ) : dataReviews.length > 0 ? (
-          dataReviews.map((item) => {
+        ) : isError ? (
+          <p className="text-center text-sm text-destructive">
+            {error instanceof Error
+              ? error.message
+              : "Terjadi kesalahan saat memuat ulasan."}
+          </p>
+        ) : reviews.length > 0 ? (
+          reviews.map((item) => {
             const initials = item.reviewer.fullName
               .split(" ")
               .map((n: string) => n[0])
@@ -59,11 +112,11 @@ const ProfileContentReviews = () => {
         )}
       </div>
 
-      {!!data?.meta?.total && (
+      {!!totalCount && (
         <PaginationWithLinks
           page={page}
           pageSize={limit}
-          totalCount={data.meta.total}
+          totalCount={totalCount}
           onPageChange={setPage}
           onPageSizeChange={(newLimit) => {
             setLimit(newLimit);
@@ -141,7 +194,7 @@ const ReviewItem = ({
                   icon="radix-icons:star-filled"
                   width=".6em"
                   height=".6em"
-                  style={{ color: (review.rating + 1) ? "#9A8F85" : "#F97316"}}
+                  style={{ color: review.rating + 1 ? "#9A8F85" : "#F97316" }}
                 />
               );
             })}

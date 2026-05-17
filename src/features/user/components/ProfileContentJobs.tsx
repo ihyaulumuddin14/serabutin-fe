@@ -8,50 +8,153 @@ import {
   DialogTitle,
 } from "@/shared/components/ui/dialog";
 import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-links";
-import type { JobAssignment } from "@/shared/types/entity.type";
+import type { JobAssignment, Profile, User } from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
 import { useState } from "react";
+import { useParams } from "react-router";
 import { useMeJobs } from "../hooks/clientHooks";
+import {
+  useUserAssignments,
+  useUserById,
+  useUserJobs,
+} from "../hooks/userHooks";
 import { useMeAssignments } from "../hooks/workerHooks";
-import { useMe } from "../hooks/userHooks";
 import DialogJobRate from "./DialogJobRate";
 import { JobItemSkeleton } from "./skeleton/JobItemSkeleton";
+import { DialogJobEdit } from "./DialogJobEdit";
+import { DialogJobDelete } from "./DialogJobDelete";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
+import type { JobStatus } from "@/shared/types/common.type";
+import { useUpdateJobStatus } from "@/features/jobs/hooks/jobHooks";
+type ProfileContentJobsProps = {
+  sessionUser: User | null;
+  sessionProfile: Profile | null;
+};
 
-const ProfileContentJobs = () => {
+const ProfileContentJobs = ({ sessionUser }: ProfileContentJobsProps) => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const { user } = useMe();
+  const { userId } = useParams();
+  const isOwnProfile = !userId || userId === sessionUser?.id;
+  const {
+    data: viewedUserData,
+    isLoading: isViewedUserLoading,
+    isError: isViewedUserError,
+    error: viewedUserError,
+  } = useUserById(userId || "", !isOwnProfile);
+  const targetUser = isOwnProfile ? sessionUser : viewedUserData?.user;
+  const targetRole = targetUser?.role;
 
-  // for client
-  const { data: clientData, isLoading: isLoadingJobs } = useMeJobs({ page, limit });
+  const {
+    data: clientData,
+    isLoading: isLoadingJobs,
+    isError: isClientJobsError,
+    error: clientJobsError,
+  } = useMeJobs({ page, limit });
   const dataJobs = (clientData?.data ?? []) as JobAssignment[];
 
-  // for worker
-  const { data: workerData, isLoading: isLoadingAssignments } =
-    useMeAssignments(page, limit);
+  const {
+    data: workerData,
+    isLoading: isLoadingAssignments,
+    isError: isWorkerJobsError,
+    error: workerJobsError,
+  } = useMeAssignments(page, limit);
   const dataAssignments = (workerData?.data ?? []) as JobAssignment[];
 
-  // determine active data based on user role
-  const isClient = user?.role === "client";
-  const activeData = isClient ? dataJobs : dataAssignments;
-  const isLoading = isClient ? isLoadingJobs : isLoadingAssignments;
-  const totalCount = isClient
-    ? clientData?.meta?.total
-    : workerData?.meta?.total;
+  const {
+    data: userJobsData,
+    isLoading: isUserJobsLoading,
+    isError: isUserJobsError,
+    error: userJobsError,
+  } = useUserJobs({
+    userId: userId || "",
+    page,
+    limit,
+    enabled: !isOwnProfile && targetRole === "client",
+  });
+  const dataUserJobs = (userJobsData?.data ?? []) as JobAssignment[];
+
+  const {
+    data: userAssignmentsData,
+    isLoading: isUserAssignmentsLoading,
+    isError: isUserAssignmentsError,
+    error: userAssignmentsError,
+  } = useUserAssignments({
+    userId: userId || "",
+    page,
+    limit,
+    enabled: !isOwnProfile && targetRole === "worker",
+  });
+  const dataUserAssignments = (userAssignmentsData?.data ??
+    []) as JobAssignment[];
+
+  const isClient = targetRole === "client";
+  const jobs = isClient
+    ? isOwnProfile
+      ? dataJobs
+      : dataUserJobs
+    : isOwnProfile
+      ? dataAssignments
+      : dataUserAssignments;
+  const isLoading = isOwnProfile
+    ? isClient
+      ? isLoadingJobs
+      : isLoadingAssignments
+    : isViewedUserLoading ||
+      (isClient ? isUserJobsLoading : isUserAssignmentsLoading);
+  const isError = isOwnProfile
+    ? isClient
+      ? isClientJobsError
+      : isWorkerJobsError
+    : isViewedUserError ||
+      (isClient ? isUserJobsError : isUserAssignmentsError);
+  const errorMessage = isOwnProfile
+    ? isClient
+      ? clientJobsError instanceof Error
+        ? clientJobsError.message
+        : "Terjadi kesalahan saat memuat pekerjaan."
+      : workerJobsError instanceof Error
+        ? workerJobsError.message
+        : "Terjadi kesalahan saat memuat pekerjaan."
+    : viewedUserError instanceof Error
+      ? viewedUserError.message
+      : isClient
+        ? userJobsError instanceof Error
+          ? userJobsError.message
+          : "Terjadi kesalahan saat memuat pekerjaan."
+        : userAssignmentsError instanceof Error
+          ? userAssignmentsError.message
+          : "Terjadi kesalahan saat memuat pekerjaan.";
+  const totalCount = isOwnProfile
+    ? isClient
+      ? clientData?.meta?.total
+      : workerData?.meta?.total
+    : isClient
+      ? userJobsData?.meta?.total
+      : userAssignmentsData?.meta?.total;
   const emptyMessage = isClient
-    ? "Anda belum membuat pekerjaan apapun."
-    : "Anda belum mengerjakan pekerjaan apapun.";
+    ? "Belum ada pekerjaan yang dibuat."
+    : "Belum ada pekerjaan yang dikerjakan.";
 
   return (
     <>
       <div className="w-full flex flex-col gap-2">
         {isLoading ? (
           [...Array(2)].map((_, i) => <JobItemSkeleton key={i} />)
-        ) : activeData.length > 0 ? (
-          activeData.map((item) => (
+        ) : isError ? (
+          <p className="text-center text-sm text-destructive">{errorMessage}</p>
+        ) : jobs.length > 0 ? (
+          jobs.map((item) => (
             <JobItem
               key={item.id}
               job={item}
+              canEditStatus={isOwnProfile && isClient}
             />
           ))
         ) : (
@@ -79,19 +182,28 @@ const ProfileContentJobs = () => {
 
 export default ProfileContentJobs;
 
-const JobItem = ({ job }: { job: JobAssignment }) => {
-  const [isDialogDetailOpen, setIsDialogDetailOpen] = useState(false);
-  const [isDialogRatingOpen, setIsDialogRatingOpen] = useState(false);
+const JobItem = ({
+  job,
+  canEditStatus,
+}: {
+  job: JobAssignment;
+  canEditStatus: boolean;
+}) => {
+  const [dialogData, setDialogData] = useState<{
+    type: "detail" | "rating" | "edit" | "delete";
+    job: JobAssignment;
+  } | null>(null);
+  const { mutate: updateJobStatus, isPending } = useUpdateJobStatus();
   const startDate = new Date(job.startAt);
   const deadlineDate = new Date(job.deadlineAt);
   const diffTime = Math.abs(deadlineDate.getTime() - startDate.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const statusVariant =
     job.status === "open"
-      ? "error"
+      ? "success"
       : job.status === "in_progress"
         ? "warning"
-        : "success";
+        : "error";
   const statusLabel =
     job.status === "open"
       ? "Dibuka"
@@ -99,18 +211,52 @@ const JobItem = ({ job }: { job: JobAssignment }) => {
         ? "Sedang dikerjakan"
         : "Selesai";
 
+  const statusOptions: Array<{ value: JobStatus; label: string }> = [
+    { value: "completed", label: "Selesai" },
+    { value: "cancelled", label: "Dibatalkan" },
+  ];
+
   return (
     <>
       <li className="p-3 sm:p-5 rounded-md flex flex-col gap-4 shadow-md border border-border">
         {/* badge */}
         <div className="w-full flex justify-between">
           <Badge withDot>{job.category.name}</Badge>
-          <Badge
-            variant={statusVariant}
-            withDot
-          >
-            {statusLabel}
-          </Badge>
+          {canEditStatus && job.status === "in_progress" ? (
+            <Select
+              value={job.status}
+              onValueChange={(value) => {
+                if (value !== job.status) {
+                  updateJobStatus({
+                    jobId: job.id,
+                    status: value as JobStatus,
+                  });
+                }
+              }}
+              disabled={isPending}
+            >
+              <SelectTrigger className="h-7 px-2 text-xs">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Badge
+              variant={statusVariant}
+              withDot
+            >
+              {statusLabel}
+            </Badge>
+          )}
         </div>
 
         {/* title */}
@@ -121,13 +267,13 @@ const JobItem = ({ job }: { job: JobAssignment }) => {
         {/* action */}
         <div className="w-full flex justify-end gap-3">
           {job.status === "completed" && (
-            <Button onClick={() => setIsDialogRatingOpen(true)}>
+            <Button onClick={() => setDialogData({ type: "rating", job })}>
               Beri Penilaian
             </Button>
           )}
           <Button
             variant={"outline"}
-            onClick={() => setIsDialogDetailOpen(true)}
+            onClick={() => setDialogData({ type: "detail", job })}
           >
             Detail
           </Button>
@@ -135,84 +281,127 @@ const JobItem = ({ job }: { job: JobAssignment }) => {
       </li>
 
       {/* dialog rating */}
-      {isDialogRatingOpen && (
+      {dialogData?.type === "rating" && (
         <DialogJobRate
-          isDialogRatingOpen={isDialogRatingOpen}
-          setIsDialogRatingOpen={setIsDialogRatingOpen}
-          job={job}
+          isDialogRatingOpen={dialogData?.type === "rating"}
+          setIsDialogRatingOpen={(open: boolean) => {
+            if (!open) setDialogData(null);
+          }}
+          job={dialogData.job}
         />
       )}
 
       {/* dialog detail job */}
-      <Dialog
-        open={isDialogDetailOpen}
-        onOpenChange={setIsDialogDetailOpen}
-      >
-        <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle className="flex flex-col gap-2">
-              <Badge>{job.category.name}</Badge>
-              <h3 className="font-semibold text-lg sm:text-xl line-clamp-2">
-                {job.title}
-              </h3>
-            </DialogTitle>
-          </DialogHeader>
+      {dialogData?.type === "detail" && (
+        <Dialog
+          open={dialogData?.type === "detail"}
+          onOpenChange={(open) => {
+            if (!open) setDialogData(null);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex flex-col gap-2">
+                <Badge>{dialogData.job.category.name}</Badge>
+                <h3 className="font-semibold text-lg sm:text-xl line-clamp-2">
+                  {dialogData.job.title}
+                </h3>
+              </DialogTitle>
+            </DialogHeader>
 
-          <div className="flex flex-col items-center justify-center gap-4 sm:gap-6">
-            {/* information job detail */}
-            <div className="flex flex-col gap-1 self-start">
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <Icon
-                  icon="rivet-icons:map-pin-solid"
-                  width="1em"
-                  height="1em"
-                  style={{ color: "#F97316" }}
-                />
-                {job.locationDistrict}, {job.locationCity}
-              </p>
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <Icon
-                  icon="lets-icons:date-today-light"
-                  width="1em"
-                  height="1em"
-                  style={{ color: "#F97316" }}
-                />{" "}
-                {new Date(job.startAt).toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "short",
-                })}{" "}
-                -{" "}
-                {new Date(job.deadlineAt).toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "short",
-                })}{" "}
-                <b>({diffDays} hari)</b>
-              </p>
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <Icon
-                  icon="ic:baseline-group"
-                  width="1em"
-                  height="1em"
-                  style={{ color: "#F97316" }}
-                />
-                {job.workersNeeded} orang pekerja
-              </p>
-            </div>
+            <div className="flex flex-col items-center justify-center gap-4 sm:gap-6">
+              {/* information job detail */}
+              <div className="flex flex-col gap-1 self-start">
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Icon
+                    icon="rivet-icons:map-pin-solid"
+                    width="1em"
+                    height="1em"
+                    style={{ color: "#F97316" }}
+                  />
+                  {dialogData.job.locationDistrict},{" "}
+                  {dialogData.job.locationCity}
+                </p>
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Icon
+                    icon="lets-icons:date-today-light"
+                    width="1em"
+                    height="1em"
+                    style={{ color: "#F97316" }}
+                  />{" "}
+                  {new Date(dialogData.job.startAt).toLocaleDateString(
+                    "id-ID",
+                    {
+                      day: "numeric",
+                      month: "short",
+                    },
+                  )}{" "}
+                  -{" "}
+                  {new Date(dialogData.job.deadlineAt).toLocaleDateString(
+                    "id-ID",
+                    {
+                      day: "numeric",
+                      month: "short",
+                    },
+                  )}{" "}
+                  <b>({diffDays} hari)</b>
+                </p>
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Icon
+                    icon="ic:baseline-group"
+                    width="1em"
+                    height="1em"
+                    style={{ color: "#F97316" }}
+                  />
+                  {dialogData.job.workersNeeded} orang pekerja
+                </p>
+              </div>
 
-            <div className="w-full h-fit max-h-40 overflow-y-auto">
-              {job.description}
+              <div className="w-full h-fit max-h-40 overflow-y-auto">
+                {dialogData.job.description}
+              </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setIsDialogDetailOpen(false)}
-            >
-              Tutup Detail
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button
+                variant="secondary"
+                onClick={() =>
+                  setDialogData({ type: "edit", job: dialogData.job })
+                }
+              >
+                Edit
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() =>
+                  setDialogData({ type: "delete", job: dialogData.job })
+                }
+              >
+                Hapus
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {dialogData?.type === "edit" && (
+        <DialogJobEdit
+          isDialogJobEditOpen={dialogData?.type === "edit"}
+          setIsDialogJobEditOpen={(open: boolean) => {
+            if (!open) setDialogData(null);
+          }}
+          job={dialogData.job}
+        />
+      )}
+
+      {dialogData?.type === "delete" && (
+        <DialogJobDelete
+          isDialogJobDeleteOpen={dialogData?.type === "delete"}
+          setIsDialogJobDeleteOpen={(open: boolean) => {
+            if (!open) setDialogData(null);
+          }}
+          job={dialogData.job}
+        />
+      )}
     </>
   );
 };

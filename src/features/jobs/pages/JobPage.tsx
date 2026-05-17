@@ -2,9 +2,18 @@ import { useAuthStore } from "@/features/auth/stores/authStores"
 import JobFilter from "../components/JobFilter"
 import JobOffer from "../components/JobOffer"
 import MainListPostedJobs from "../components/MainListPostedJobs";
+import { useMe } from "@/features/user/hooks/userHooks";
+import { Button } from "@/shared/components/ui/button";
+import { Plus } from "lucide-react";
+import { useNavigate } from "react-router";
 
 const JobPage = () => {
   const { isAuthenticated } = useAuthStore();
+  const { user } = useMe();
+  const navigate = useNavigate();
+  const handlePostJob = () => {
+    navigate("/job-post");
+  }
 
   return (
     <>
@@ -13,6 +22,12 @@ const JobPage = () => {
         {isAuthenticated && <JobOffer />}
       </div>
       <MainListPostedJobs />
+      {user?.role === "client" && (
+        <Button size={"xl"} className="fixed bottom-7 right-7 flex gap-2 md:hidden text-sm!" onClick={handlePostJob}>
+          <Plus strokeWidth={3} className="size-7"/>
+          Posting
+        </Button>
+      )}
     </>
   )
 }

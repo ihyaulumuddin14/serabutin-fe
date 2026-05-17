@@ -3,6 +3,7 @@ import { toCamel } from "@/shared/lib/case";
 import type { ApiResponse, MetaPagination } from "@/shared/types/common.type";
 import type { Bid, JobAssignment } from "@/shared/types/entity.type";
 import type { WorkerToReview } from "../types";
+import { ensureSuccess } from "./userServiceUtils";
 
 export const getClientJobs = async (
   page: number = 1,
@@ -15,31 +16,26 @@ export const getClientJobs = async (
       page,
       limit,
       categorySlug,
-      status
-    }
+      status,
+    },
   });
 
-  if (response.data.status !== "success")
-    throw new Error(response.data?.message || "Gagal mengambil data pekerjaan");
-
-  return toCamel(response.data) as (ApiResponse<JobAssignment[]> & {
-      meta: {
-        currentPage: number,
-        perPage: number,
-        total: number,
-        lastPage: number
-      }
-    }
-  );
+  const data = ensureSuccess(response, "Gagal mengambil data pekerjaan");
+  return toCamel(data) as ApiResponse<JobAssignment[]> & {
+    meta: {
+      currentPage: number;
+      perPage: number;
+      total: number;
+      lastPage: number;
+    };
+  };
 };
 
 export const getWorkersByJobId = async (jobId: string) => {
   const response = await privateApi.get(`/jobs/${jobId}/workers`);
 
-  if (response.data.status !== "success")
-    throw new Error(response.data?.message || "Gagal mengambil data pekerja");
-  
-  return toCamel(response.data.data) as ApiResponse<WorkerToReview[]>;
+  const data = ensureSuccess(response, "Gagal mengambil data pekerja");
+  return toCamel(data.data) as ApiResponse<WorkerToReview[]>;
 };
 
 export const getBidsOfJob = async (
@@ -52,12 +48,10 @@ export const getBidsOfJob = async (
     params: {
       page,
       status,
-      limit
-    }
+      limit,
+    },
   });
 
-  if (response.data.status !== "success")
-    throw new Error(response.data?.message || "Gagal mengambil data penawaran");
-
-  return toCamel(response.data) as ApiResponse<Bid[]> & { meta: MetaPagination };
+  const data = ensureSuccess(response, "Gagal mengambil data penawaran");
+  return toCamel(data) as ApiResponse<Bid[]> & { meta: MetaPagination };
 };

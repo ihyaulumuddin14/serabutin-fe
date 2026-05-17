@@ -26,6 +26,7 @@ import {
 } from "./ui/drawer";
 import { PaginationWithLinks } from "./ui/pagination-with-links";
 import { Separator } from "./ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 const NavbarMain = () => {
   const { user, isPending } = useMe();
@@ -34,8 +35,6 @@ const NavbarMain = () => {
   const handleClientJobBidsNavigate = () => {
     navigate("/job-bids");
   };
-
-  console.log(user)
 
   return (
     <nav className="fixed z-50 top-0 left-0 w-full h-14.5 px-4 sm:px-8 flex items-center justify-between bg-white">
@@ -64,16 +63,23 @@ const NavbarMain = () => {
           {user?.role === "worker" ? (
             <BidsDrawer />
           ) : (
-            <button
-              className="w-8.5 h-8.5 rounded-full flex justify-center items-center overflow-hidden md:hidden bg-accent border-2 border-ring hover:cursor-pointer"
-              onClick={handleClientJobBidsNavigate}
-            >
-              <BriefcaseBusiness
-                color="#C95E07"
-                size={16}
-                className=""
-              />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  className="w-8.5 h-8.5 rounded-full flex justify-center items-center overflow-hidden md:hidden bg-accent border-2 border-ring hover:cursor-pointer"
+                  onClick={handleClientJobBidsNavigate}
+                >
+                  <BriefcaseBusiness
+                    color="#C95E07"
+                    size={16}
+                    className=""
+                  />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="text-sm">Lihat Penawaran</p>
+              </TooltipContent>
+            </Tooltip>
           )}
           <ProfileDropdown />
         </div>
