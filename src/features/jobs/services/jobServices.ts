@@ -2,11 +2,15 @@ import privateApi from "@/shared/api/axiosInstance";
 import { toCamel, toSnake } from "@/shared/lib/case";
 import type {
   ApiResponse,
+  JobStatus,
   MetaCursorPagination,
 } from "@/shared/types/common.type";
 import type { Category, JobAssignment } from "@/shared/types/entity.type";
 import axios from "axios";
-import type { PostJobCredentials } from "../schemas/postJobSchemas";
+import type {
+  EditJobCredentials,
+  PostJobCredentials,
+} from "../schemas/postJobSchemas";
 import { ensureSuccess } from "../utils/jobServiceUtils";
 
 export interface JobsInfiniteResponse extends ApiResponse {
@@ -45,6 +49,7 @@ export const getJobs = async ({
   dateTo?: string;
   q?: string;
 }) => {
+  console.log("fetch get jobs");
   const response = await axios.get(`${jobsBaseUrl}/jobs`, {
     params: {
       cursor,
@@ -64,7 +69,7 @@ export const getJobs = async ({
 };
 
 export const getJobById = async (jobId: string) => {
-  const response = await privateApi.get(`${jobsBaseUrl}/jobs/${jobId}`);
+  const response = await privateApi.get(`/jobs/${jobId}`);
 
   const data = ensureSuccess(response, "Gagal mengambil data pekerjaan");
   return toCamel(data.data) as JobAssignment;
@@ -73,11 +78,29 @@ export const getJobById = async (jobId: string) => {
 export const postJob = async (payload: PostJobCredentials) => {
   const convertedPayload = toSnake(payload);
 
-  const response = await privateApi.post(
-    `${jobsBaseUrl}/jobs`,
-    convertedPayload,
-  );
+  const response = await privateApi.post(`/jobs`, convertedPayload);
 
   const data = ensureSuccess(response, "Gagal memposting kebutuhan jasa");
-  return toCamel(data) as ApiResponse;
+  return toCamel(data) as ApiResponse<JobAssignment>;
+};
+
+export const editJob = async (jobId: string, payload: EditJobCredentials) => {
+  const convertedPayload = toSnake(payload);
+
+  const response = await privateApi.patch(`/jobs/${jobId}`, convertedPayload);
+
+  const data = ensureSuccess(response, "Gagal mengedit pekerjaan");
+  return toCamel(data) as ApiResponse<JobAssignment>;
+};
+
+export const deleteJob = async (jobId: string) => {
+  const response = await privateApi.delete(`/jobs/${jobId}`);
+  return ensureSuccess(response, "Gagal menghapus pekerjaan");
+};
+
+export const updateJobStatus = async (jobId: string, status: JobStatus) => {
+  const response = await privateApi.patch(`/jobs/${jobId}/status`, { status });
+
+  const data = ensureSuccess(response, "Gagal memperbarui status pekerjaan");
+  return toCamel(data) as ApiResponse<JobAssignment>;
 };
