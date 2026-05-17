@@ -1,6 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { jobKeys, type JobListFilters } from "../queries/jobQueryKeys";
-import { getCategories, getJobById, getJobs } from "../services/jobServices";
+import {
+  getCategories,
+  getJobById,
+  getJobs,
+  postJob,
+} from "../services/jobServices";
+import type { PostJobCredentials } from "../schemas/postJobSchemas";
+import { showJobError, showJobSuccess } from "../utils/jobUtils";
 
 export const useCategory = () => {
   return useQuery({
@@ -49,5 +56,20 @@ export const useGetJobById = (
     queryKey: jobKeys.detail(jobId),
     queryFn: () => getJobById(jobId),
     retry: false,
+  });
+};
+
+export const usePostJob = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: PostJobCredentials) => postJob(payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: jobKeys.all });
+      showJobSuccess(data.message || "Kebutuhan jasa berhasil diposting");
+    },
+    onError: (error) => {
+      showJobError(error);
+    },
   });
 };

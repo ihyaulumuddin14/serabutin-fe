@@ -16,6 +16,7 @@ import JobPage from "./features/jobs/pages/JobPage"
 import ClientJobBidPage from "./features/user/pages/ClientJobBidPage"
 import ClientJobBidLayout from "./shared/layouts/ClientJobBidLayout"
 import ClientBidPage from "./features/user/pages/ClientBidPage"
+import ClientPostJobPage from "./features/jobs/pages/ClientPostJobPage"
 
 function App() {
   return (
@@ -36,14 +37,18 @@ function App() {
               <Route index element={<JobPage />} />
             </Route>
 
+            <Route path="/profile" element={<ProfileLayout />}>
+              <Route path=":userId" element={<ProfilePage />} />
+            </Route>
+
             <Route element={<ProtectedRoute />}>
               <Route path="/profile" element={<ProfileLayout />}>
                 <Route index element={<ProfilePage />} />
-                {/* <Route path=":userId" element={<ProfilePage />} /> */}
               </Route>
-              <Route path="/job-bids" element={<ClientJobBidLayout />}>
-                <Route index element={<ClientJobBidPage />} />
-                <Route path=":jobId" element={<ClientBidPage />} />
+              <Route element={<ClientJobBidLayout />}>
+                <Route path="/job-bids" element={<ClientJobBidPage />} />
+                <Route path="/job-bids/:jobId" element={<ClientBidPage />} />
+                <Route path="/job-post" element={<ClientPostJobPage />} />
               </Route>
             </Route>
           </Route>

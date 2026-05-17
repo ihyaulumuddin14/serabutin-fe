@@ -8,14 +8,19 @@ import { useIsMobile } from "@/shared/hooks/useAnimation";
 import type { Bid, JobAssignment } from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
 import { Plus } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import JobOfferSkeleton from "./skeleton/JobOfferSkeleton";
 import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-links";
 import { useState } from "react";
 
 const JobOffer = () => {
+  const navigate = useNavigate();
   const { user, isLoading, isError, error } = useMe();
   const isMobile = useIsMobile();
+
+  const handlePostJob = () => {
+    navigate("/job-post");
+  }
 
   if (isLoading) {
     return (
@@ -44,7 +49,7 @@ const JobOffer = () => {
   return (
     <div className="w-full h-fit bg-card flex flex-col justify-center p-4 sm:p-6 shadow-md rounded-md">
       {user?.role === "client" && (
-        <Button className="mb-8 font-bold text-base! p-6">
+        <Button className="mb-8 font-bold text-base! p-6" onClick={handlePostJob}>
           <Plus />
           Posting Kebutuhan Jasa
         </Button>

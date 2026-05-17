@@ -1,11 +1,12 @@
 import privateApi from "@/shared/api/axiosInstance";
-import { toCamel } from "@/shared/lib/case";
+import { toCamel, toSnake } from "@/shared/lib/case";
 import type {
   ApiResponse,
   MetaCursorPagination,
 } from "@/shared/types/common.type";
 import type { Category, JobAssignment } from "@/shared/types/entity.type";
 import axios from "axios";
+import type { PostJobCredentials } from "../schemas/postJobSchemas";
 import { ensureSuccess } from "../utils/jobServiceUtils";
 
 export interface JobsInfiniteResponse extends ApiResponse {
@@ -67,4 +68,16 @@ export const getJobById = async (jobId: string) => {
 
   const data = ensureSuccess(response, "Gagal mengambil data pekerjaan");
   return toCamel(data.data) as JobAssignment;
+};
+
+export const postJob = async (payload: PostJobCredentials) => {
+  const convertedPayload = toSnake(payload);
+
+  const response = await privateApi.post(
+    `${jobsBaseUrl}/jobs`,
+    convertedPayload,
+  );
+
+  const data = ensureSuccess(response, "Gagal memposting kebutuhan jasa");
+  return toCamel(data) as ApiResponse;
 };
