@@ -1,12 +1,14 @@
-import { useQuery } from "@tanstack/react-query";
+import { showJobError, showJobSuccess } from "@/features/jobs/utils/jobUtils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { clientKeys, workerKeys } from "../queries/userQueryKeys";
 import {
+  acceptBid,
   getBidsOfJob,
   getClientJobs,
   getWorkersByJobId,
 } from "../services/clientServices";
 import type { BidStatus, WorkerToReview } from "../types";
 import { useMe } from "./userHooks";
-import { clientKeys } from "../queries/userQueryKeys";
 
 export const useMeJobs = ({
   page = 1,
@@ -41,7 +43,7 @@ export const useGetWorkers = (jobId: string, enabled: boolean = true) => {
   });
 
   return {
-    data: data?.data as WorkerToReview[],
+    data: data as WorkerToReview[] | undefined,
     isLoading,
     isError,
     error,
@@ -62,5 +64,21 @@ export const useGetBidsOfJob = (
     queryKey: clientKeys.bids(params),
     queryFn: () => getBidsOfJob(page, jobId, status, limit),
     enabled: !!jobId && isClient,
+  });
+};
+
+export const useAcceptBid = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (bidId: string) => acceptBid(bidId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: clientKeys.all });
+      queryClient.invalidateQueries({ queryKey: workerKeys.all });
+      showJobSuccess(data.message || "Tawaran berhasil diterima");
+    },
+    onError: (error) => {
+      showJobError(error);
+    },
   });
 };
