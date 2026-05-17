@@ -1,4 +1,4 @@
-export type JobStatus = "open" | "in_progress" | "completed";
+export type JobStatus = "open" | "in_progress" | "completed" | "cancelled";
 
 export type ApiResponse<T = unknown> = {
   status: string,
