@@ -11,7 +11,7 @@ const ProfileContent = () => {
   const { user, profile } = useMe();
 
   return (
-    <div className="w-full h-fit bg-card flex flex-col items-center justify-center gap-5 p-6 shadow-md rounded-[14px]">
+    <div className="w-full h-fit bg-card flex flex-col items-center justify-center gap-5 p-6 shadow-md rounded-[14px] mb-4">
       {/* tabs */}
       <Tabs
         className="w-full"
