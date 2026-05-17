@@ -33,7 +33,7 @@ const MainListPostedJobs = () => {
               <Button
                 size={"lg"}
                 variant={"outline"}
-                className="bg-card text-muted-foreground font-bold!"
+                className="bg-card text-muted-foreground font-bold! md:hidden"
               >
                 Filter
               </Button>

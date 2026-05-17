@@ -142,7 +142,7 @@ export const JobBidItem = ({
     <li
       className={`w-full p-3 rounded-lg border border-border bg-background flex flex-col gap-2 ${className}`}
     >
-      <p className="font-semibold">{job.title}</p>
+      <p className="font-semibold line-clamp-2">{job.title}</p>
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Memuat tawaran...</p>
       ) : isError ? (

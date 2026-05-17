@@ -451,7 +451,7 @@ const PostJobForm = () => {
                 />
               )}
             />
-            <span className="text-center text-sm text-muted-foreground">
+            <span className="text-center text-sm text-muted-foreground min-w-fit">
               s/d
             </span>
             <Controller
