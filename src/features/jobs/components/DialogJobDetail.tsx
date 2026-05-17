@@ -12,6 +12,7 @@ import type { JobAssignment } from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
 import { useMemo } from "react";
 import Skeleton from "@/shared/components/Skeleton";
+import { useNavigate } from "react-router";
 
 const DialogJobDetail = ({
   job,
@@ -22,6 +23,7 @@ const DialogJobDetail = ({
   isDialogDetailOpen: boolean;
   setIsDialogDetailOpen: (open: boolean) => void;
 }) => {
+  const navigate = useNavigate();
   const { user } = useMe();
   const startAt = new Date(job.startAt);
   const deadlineAt = new Date(job.deadlineAt);
@@ -56,6 +58,12 @@ const DialogJobDetail = ({
     </div>
   );
 
+  const handleVisitProfile = () => {
+    const clientId = clientData?.user?.id;
+    if (clientId) {
+      navigate(`/profile/${clientId}`);
+    }
+  };
 
   return (
     <Dialog
@@ -65,45 +73,47 @@ const DialogJobDetail = ({
       <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className="flex gap-2 items-center">
-            {user?.role === "worker" && (
-              <>
-                {avatarContent}
-                <div className="flex flex-col">
-                  <span className="font-bold text-lg">{clientData?.user?.fullName}</span>
-                  <span className="flex gap-0.5 items-center">
-                    {isLoading ? (
-                      <Skeleton className="w-20 h-3" />
-                    ) : isError ? (
-                      <span className="text-sm text-destructive">
-                        {error instanceof Error
-                          ? error.message
-                          : "Gagal memuat rating."}
+            <div className="w-full flex items-center gap-3">
+              {avatarContent}
+              <div className="flex flex-col">
+                <span className="font-bold text-lg">{clientData?.user?.fullName}</span>
+                <span className="flex gap-0.5 items-center">
+                  {isLoading ? (
+                    <Skeleton className="w-20 h-3" />
+                  ) : isError ? (
+                    <span className="text-sm text-destructive">
+                      {error instanceof Error
+                        ? error.message
+                        : "Gagal memuat rating."}
+                    </span>
+                  ) : (
+                    <>
+                      {[...Array(5)].map((_, i) => {
+                        return (
+                          <Icon
+                            key={i}
+                            icon="radix-icons:star-filled"
+                            width=".8em"
+                            height=".8em"
+                            style={{
+                              color:
+                                i + 1 > clientAvgRating ? "#9A8F85" : "#F97316",
+                            }}
+                          />
+                        );
+                      })}{" "}
+                      <span className="ml-2 text-sm text-muted-foreground">
+                        {clientAvgRating.toFixed(1)}
                       </span>
-                    ) : (
-                      <>
-                        {[...Array(5)].map((_, i) => {
-                          return (
-                            <Icon
-                              key={i}
-                              icon="radix-icons:star-filled"
-                              width=".8em"
-                              height=".8em"
-                              style={{
-                                color:
-                                  i + 1 > clientAvgRating ? "#9A8F85" : "#F97316",
-                              }}
-                            />
-                          );
-                        })}{" "}
-                        <span className="ml-2 text-sm text-muted-foreground">
-                          {clientAvgRating.toFixed(1)}
-                        </span>
-                      </>
-                    )}
-                  </span>
-                </div>
-              </>
-            )}
+                    </>
+                  )}
+                </span>
+              </div>
+
+              <Button className="ml-auto" variant={"outline"} onClick={handleVisitProfile}>
+                Lihat Profil
+              </Button>
+            </div>
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center justify-center gap-4 sm:gap-6">
