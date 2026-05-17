@@ -35,8 +35,6 @@ const NavbarMain = () => {
     navigate("/job-bids");
   };
 
-  console.log(user)
-
   return (
     <nav className="fixed z-50 top-0 left-0 w-full h-14.5 px-4 sm:px-8 flex items-center justify-between bg-white">
       {/* logo */}
