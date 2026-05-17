@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import type { ReviewCredentials } from "../schemas/reviewSchemas";
 import { type EditProfileSchema } from "../schemas/userSchemas";
-import { userKeys } from "../queries/userQueryKeys";
+import { clientKeys, userKeys, workerKeys } from "../queries/userQueryKeys";
 import {
   getMe,
   getMeReviews,
@@ -154,10 +154,16 @@ export const useUserAssignments = ({
 };
 
 export const useSubmitJobReviews = () => {
-  return useMutation({
-    mutationFn: async (params: { jobId: string; drafts: ReviewDraft[] }) => {
-      const { jobId, drafts } = params;
+  const queryClient = useQueryClient();
 
+  return useMutation({
+    mutationFn: async ({
+      jobId,
+      drafts,
+    }: {
+      jobId: string;
+      drafts: ReviewDraft[];
+    }) => {
       if (!drafts.length) return;
 
       await Promise.all(
@@ -165,6 +171,8 @@ export const useSubmitJobReviews = () => {
       );
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: workerKeys.assignments({}) });
+      queryClient.invalidateQueries({ queryKey: clientKeys.meJobs({}) });
       showUserSuccess("Ulasan berhasil dikirim");
     },
     onError: (error) => {

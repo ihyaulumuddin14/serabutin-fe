@@ -183,7 +183,7 @@ export const BidsDrawer = ({
   triggerOption?: "icon" | "text";
 }) => {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(5);
   const [isOpen, setIsOpen] = useState(false);
   const { data } = useMeBids({ page, limit, enabled: isOpen });
 
@@ -214,8 +214,8 @@ export const BidsDrawer = ({
             <h2 className="font-bold text-xl">Daftar Penawaran Saya</h2>
           </DrawerTitle>
         </DrawerHeader>
-        <div className="w-full h-full bg-card flex flex-col gap-3 justify-between p-4 sm:p-6">
-          <BidList enabledBidsFetch={isOpen} />
+        <div className="w-full h-full bg-card flex flex-col gap-3 justify-between p-4 sm:p-6 overflow-y-scroll">
+          <BidList enabledBidsFetch={isOpen} page={page} limit={limit} />
           <PaginationWithLinks
             page={page}
             pageSize={limit}

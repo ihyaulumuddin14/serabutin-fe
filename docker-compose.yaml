@@ -1,0 +1,7 @@
+services:
+  frontend:
+    build: .
+    container_name: serabutin_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"

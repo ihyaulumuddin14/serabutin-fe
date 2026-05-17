@@ -6,6 +6,7 @@ import type {
   Profile,
   Review,
   User,
+  WorkerAssignment,
 } from "@/shared/types/entity.type";
 import type { ReviewCredentials } from "../schemas/reviewSchemas";
 import { type EditProfileSchema } from "../schemas/userSchemas";
@@ -122,7 +123,9 @@ export const getUserAssignments = async (
   });
 
   const data = ensureSuccess(response, "Gagal mengambil data pekerjaan");
-  return toCamel(data) as ApiResponse<JobAssignment[]> & {
+
+  console.log(data);
+  return toCamel(data) as ApiResponse<WorkerAssignment[]> & {
     meta: MetaPagination;
   };
 };
@@ -140,7 +143,10 @@ export const getReviewsByUserId = async (
   };
 };
 
-export const sendReview = async (jobId: string, payload: ReviewCredentials) => {
+export const sendReview = async (
+  jobId: string,
+  payload: ReviewCredentials,
+) => {
   const response = await privateApi.post(
     `/jobs/${jobId}/reviews`,
     toSnake(payload),

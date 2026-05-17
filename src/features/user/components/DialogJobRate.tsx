@@ -14,7 +14,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/shared/components/ui/field";
 import { Textarea } from "@/shared/components/ui/textarea";
-import type { JobAssignment, User } from "@/shared/types/entity.type";
+import type { JobSummary, User } from "@/shared/types/entity.type";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Icon } from "@iconify-icon/react";
 import { useState } from "react";
@@ -25,15 +25,18 @@ import { useMe, useSubmitJobReviews } from "../hooks/userHooks";
 import { ReviewSchema, type ReviewCredentials } from "../schemas/reviewSchemas";
 import { useReviewDraftStore, type ReviewDraft } from "../stores/reviewStores";
 import { RatingItemSkeleton } from "./skeleton/RatingItemSkeleton";
+import type { WorkerToReview } from "../types";
 
 const DialogJobRate = ({
   isDialogRatingOpen,
   setIsDialogRatingOpen,
   job,
+  assignmentId,
 }: {
   isDialogRatingOpen: boolean;
   setIsDialogRatingOpen: (open: boolean) => void;
-  job: JobAssignment;
+  job: JobSummary;
+  assignmentId?: string;
 }) => {
   const {
     data: toBeReviewedData,
@@ -44,15 +47,27 @@ const DialogJobRate = ({
   const { user } = useMe();
   const { mutate: submitJobReviews, isPending: isPendingSubmitJobReviews } =
     useSubmitJobReviews();
-  const { rawDrafts, clearJobDrafts, hasHydrated } = useReviewDraftStore(
-    useShallow((state) => ({
-      rawDrafts: state.draftsByJob[job.id],
-      clearJobDrafts: state.clearJobDrafts,
-      hasHydrated: state.hasHydrated,
-    })),
-  );
+  const { draftsByAssignmentId, clearJobDrafts, hasHydrated } =
+    useReviewDraftStore(
+      useShallow((state) => ({
+        draftsByAssignmentId: state.draftsByAssignmentId,
+        clearJobDrafts: state.clearJobDrafts,
+        hasHydrated: state.hasHydrated,
+      })),
+    );
 
-  const reviewDrafts = rawDrafts ?? [];
+  const assignmentIds =
+    user?.role === "client"
+      ? (toBeReviewedData ?? [])
+          .filter((item) => !item.hasReviewed)
+          .map((item) => item.assignmentId)
+      : assignmentId
+        ? [assignmentId]
+        : [];
+
+  const reviewDrafts = assignmentIds
+    .map((assignmentId) => draftsByAssignmentId[assignmentId] ?? [])
+    .flat();
 
   const handleSendRating = () => {
     if (!user?.role || !reviewDrafts.length) return;
@@ -98,18 +113,23 @@ const DialogJobRate = ({
               user?.role === "client" &&
               toBeReviewedData && (
                 <>
-                  {toBeReviewedData?.map((toBeReviewed) => (
-                    <PartnerRateItem
-                      key={toBeReviewed.worker.id}
-                      jobId={job.id}
-                      partner={toBeReviewed.worker}
-                      role={user?.role}
-                      payloadReview={reviewDrafts.find(
-                        (draft) =>
-                          draft.assignmentId === toBeReviewed.assignmentId,
-                      )}
-                    />
-                  ))}
+                  {toBeReviewedData
+                    ?.filter(
+                      (toBeReviewed: WorkerToReview) =>
+                        !toBeReviewed.hasReviewed,
+                    )
+                    .map((toBeReviewed: WorkerToReview) => (
+                      <PartnerRateItem
+                        key={toBeReviewed.worker.id}
+                        assignmentId={toBeReviewed.assignmentId}
+                        jobId={job.id}
+                        partner={toBeReviewed.worker}
+                        role={user?.role}
+                        payloadReview={
+                          draftsByAssignmentId[toBeReviewed.assignmentId]?.[0]
+                        }
+                      />
+                    ))}
                 </>
               )
             )}
@@ -120,10 +140,13 @@ const DialogJobRate = ({
                 key={job.client.id}
                 partner={job.client}
                 jobId={job.id}
+                assignmentId={assignmentId}
                 role={user?.role}
-                payloadReview={reviewDrafts.find(
-                  (draft) => draft.assignmentId === job.id,
-                )}
+                payloadReview={
+                  assignmentId
+                    ? draftsByAssignmentId[assignmentId]?.[0]
+                    : undefined
+                }
               />
             )}
           </ul>
@@ -153,11 +176,13 @@ export default DialogJobRate;
 const PartnerRateItem = ({
   partner,
   jobId,
+  assignmentId,
   role,
   payloadReview,
 }: {
   partner: Omit<User, "email" | "isVerified" | "isActive">;
   jobId: string;
+  assignmentId?: string;
   role?: User["role"];
   payloadReview?: ReviewDraft;
 }) => {
@@ -175,6 +200,7 @@ const PartnerRateItem = ({
     control,
     formState: { errors },
     handleSubmit,
+    // getValues
   } = useForm<ReviewCredentials>({
     resolver: zodResolver(ReviewSchema),
     mode: "onChange",
@@ -196,8 +222,10 @@ const PartnerRateItem = ({
   const handleSaveToLocalStorage = (data: ReviewCredentials) => {
     if (!role) return;
 
-    upsertDraft(jobId, {
-      assignmentId: jobId,
+    const resolvedAssignmentId = assignmentId ?? jobId;
+
+    upsertDraft(resolvedAssignmentId, {
+      assignmentId: resolvedAssignmentId,
       rating: data.rating,
       comment: data.comment,
     });
@@ -217,6 +245,7 @@ const PartnerRateItem = ({
             {avatarContent}
             <div className="flex flex-col gap-1">
               <p className="font-semibold text-lg">{partner.fullName}</p>
+              {}
               <Badge variant={"warning"}>Belum Dinilai</Badge>
             </div>
           </div>

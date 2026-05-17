@@ -4,8 +4,8 @@ import { Button } from "@/shared/components/ui/button";
 import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-links";
 import type { Bid, Category } from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
-import { useMemo, useState } from "react";
-import { useLocation } from "react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import {
   Select,
   SelectContent,
@@ -16,12 +16,13 @@ import {
 import { useGetBidsOfJob, useGetWorkers } from "../hooks/clientHooks";
 import { useUserById } from "../hooks/userHooks";
 import type { BidStatus, CategoryRating } from "../types";
+import { cn } from "@/shared/lib/utils";
+import { DialogBidAccept } from "../components/DialogBidAccept";
 
 const ClientBidPage = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [sort, setSort] = useState<BidSortOption>("newest");
-  // don't forget to add status filter
   const [statusFilter, setStatusFilter] = useState<BidStatus | undefined>(
     undefined,
   );
@@ -175,6 +176,7 @@ const ClientBidPage = () => {
               key={bid.id}
               bid={bid}
               category={jobData.category}
+              jobTitle={jobData.title}
             />
           ))
         ) : (
@@ -269,7 +271,20 @@ const BidStatusFilter = ({
   );
 };
 
-const ClientBidItem = ({ bid, category }: { bid: Bid; category: Category }) => {
+const ClientBidItem = ({
+  bid,
+  category,
+  jobTitle,
+}: {
+  bid: Bid;
+  category: Category;
+  jobTitle: string;
+}) => {
+  const navigate = useNavigate();
+  const [isDialogBidAcceptOpen, setIsDialogBidAcceptOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isOverflow, setIsOverflow] = useState(false);
+  const messageRef = useRef<HTMLParagraphElement | null>(null);
   const initials = bid?.worker?.fullName
     ? bid.worker.fullName
         .split(" ")
@@ -299,50 +314,103 @@ const ClientBidItem = ({ bid, category }: { bid: Bid; category: Category }) => {
   const workerAvgRating =
     profile && "avgRating" in profile ? profile?.avgRating : 0;
 
+  const message = bid.message?.trim();
+
+  useEffect(() => {
+    if (isExpanded) return;
+    const element = messageRef.current;
+    if (!element) return;
+
+    setIsOverflow(element.scrollHeight > element.clientHeight);
+  }, [message, isExpanded]);
+
+  const handleVisitProfile = () => {
+    const clientId = bid?.worker?.id;
+    if (clientId) {
+      navigate(`/profile/${clientId}`);
+    }
+  };
+
   return (
     <li
-      className={`w-full p-3 rounded-lg border border-border bg-card flex flex-col items-start sm:flex-row justify-between sm:items-center gap-5 ${bid.status === "accepted" || bid.status === "rejected" ? "opacity-50 pointer-events-none" : ""}`}
+      className={cn(
+        "w-full p-3 sm:p-4 rounded-lg border border-border bg-card flex flex-col items-start sm:flex-row justify-between sm:items-center gap-5",
+        bid.status === "accepted" ||
+          bid.status === "rejected" ||
+          bid.status === "withdrawn"
+          ? "opacity-50 pointer-events-none"
+          : "",
+      )}
     >
-      <div className="flex gap-2 items-center">
-        {avatarContent}
-        <div className="flex flex-col">
-          <p className="font-semibold">{bid?.worker?.fullName}</p>
-          <p className="text-xs sm:text-sm text-muted-foreground flex gap-1 items-center">
-            {category.name}:{" "}
-            {[...Array(5)].map((_, i) => {
-              return (
-                <Icon
-                  key={i}
-                  icon="radix-icons:star-filled"
-                  width=".8em"
-                  height=".8em"
-                  style={{
-                    color: i + 1 > categoryAvgRating ? "#9A8F85" : "#F97316",
-                  }}
-                />
-              );
-            })}
-            {categoryAvgRating.toFixed(1)}
-          </p>
-          <p className="text-xs sm:text-sm text-muted-foreground flex gap-1 items-center">
-            Semua kategori:{" "}
-            {[...Array(5)].map((_, i) => {
-              return (
-                <Icon
-                  key={i}
-                  icon="radix-icons:star-filled"
-                  width=".8em"
-                  height=".8em"
-                  style={{
-                    color: i + 1 > workerAvgRating ? "#9A8F85" : "#F97316",
-                  }}
-                />
-              );
-            })}
-            {workerAvgRating?.toFixed(1)}
-          </p>
+      <div className="flex flex-col gap-2 sm:gap-5 items-start">
+        <div className="flex gap-2 sm:gap-5 items-center">
+          {avatarContent}
+          <div className="flex flex-col">
+            <p className="font-semibold">{bid?.worker?.fullName}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground flex gap-1 items-center">
+              {category.name}:{" "}
+              {[...Array(5)].map((_, i) => {
+                return (
+                  <Icon
+                    key={i}
+                    icon="radix-icons:star-filled"
+                    width=".8em"
+                    height=".8em"
+                    style={{
+                      color: i + 1 > categoryAvgRating ? "#9A8F85" : "#F97316",
+                    }}
+                  />
+                );
+              })}
+              {categoryAvgRating.toFixed(1)}
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground flex gap-1 items-center">
+              Semua kategori:{" "}
+              {[...Array(5)].map((_, i) => {
+                return (
+                  <Icon
+                    key={i}
+                    icon="radix-icons:star-filled"
+                    width=".8em"
+                    height=".8em"
+                    style={{
+                      color: i + 1 > workerAvgRating ? "#9A8F85" : "#F97316",
+                    }}
+                  />
+                );
+              })}
+              {workerAvgRating?.toFixed(1)}
+            </p>
+          </div>
+        </div>
+        <div className="w-full sm:flex-1">
+          <div className="w-full rounded-md border border-border bg-background p-3">
+            <p className="text-[11px] font-semibold text-muted-foreground tracking-wide">
+              PESAN PENAWARAN
+            </p>
+            <p
+              ref={messageRef}
+              className={cn(
+                "mt-2 text-sm text-muted-foreground",
+                !isExpanded && "max-h-15 overflow-hidden",
+              )}
+            >
+              {message || "Tidak ada pesan dari pekerja."}
+            </p>
+            {(isOverflow || isExpanded) && (
+              <button
+                type="button"
+                className="mt-2 text-xs font-semibold text-primary hover:cursor-pointer"
+                onClick={() => setIsExpanded((prev) => !prev)}
+              >
+                {isExpanded ? "Lihat lebih sedikit" : "Lihat selengkapnya"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
+
+
       <div className="w-full sm:w-fit flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-6">
         <p>
           <span className="text-muted-foreground font-normal">Penawaran:</span>{" "}
@@ -352,8 +420,15 @@ const ClientBidItem = ({ bid, category }: { bid: Bid; category: Category }) => {
         </p>
         {bid.status === "pending" ? (
           <div className="flex gap-2 self-end md:justify-self-end">
-            <Button variant={"outline"}>Lihat Profil</Button>
-            <Button>Terima Tawaran</Button>
+            <Button
+              variant={"outline"}
+              onClick={handleVisitProfile}
+            >
+              Lihat Profil
+            </Button>
+            <Button onClick={() => setIsDialogBidAcceptOpen(true)}>
+              Terima Tawaran
+            </Button>
           </div>
         ) : bid.status === "accepted" ? (
           <div className="flex gap-2 self-end md:justify-self-end">
@@ -364,11 +439,20 @@ const ClientBidItem = ({ bid, category }: { bid: Bid; category: Category }) => {
             <Button variant={"destructive"}>Ditolak</Button>
           </div>
         ) : (
-          <div className="flex gap-2 self-end md:justify-self-end">
-            <Button variant={"outline"}>Lihat Profil</Button>
-          </div>
+          bid.status === "withdrawn" && (
+            <div className="flex gap-2 self-end md:justify-self-end">
+              <Button variant={"destructive"}>Dibatalkan</Button>
+            </div>
+          )
         )}
       </div>
+
+      <DialogBidAccept
+        bid={bid}
+        jobTitle={jobTitle}
+        isDialogBidAcceptOpen={isDialogBidAcceptOpen}
+        setIsDialogBidAcceptOpen={setIsDialogBidAcceptOpen}
+      />
     </li>
   );
 };

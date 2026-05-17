@@ -34,7 +34,7 @@ const ListPostedJobs = ({
   } = useInfiniteQuery<
     JobsInfiniteResponse, // 1. TQueryFnData
     Error, // 2. TError (Tipe error)
-    InfiniteData<JobsInfiniteResponse, string | null>, // 3. TData (Bentuk akhir data.pages, wajib menyertakan tipe pageParam)
+    InfiniteData<JobsInfiniteResponse, string | null>, // 3. TData
     readonly unknown[], // 4. TQueryKey
     string | null // 5. TPageParam
   >({

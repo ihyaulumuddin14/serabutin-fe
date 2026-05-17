@@ -49,7 +49,6 @@ export const getJobs = async ({
   dateTo?: string;
   q?: string;
 }) => {
-  console.log("fetch get jobs");
   const response = await axios.get(`${jobsBaseUrl}/jobs`, {
     params: {
       cursor,
