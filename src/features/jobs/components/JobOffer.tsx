@@ -229,7 +229,7 @@ const WorkerBidItem = ({
   const [isDialogBidDeleteOpen, setIsDialogBidDeleteOpen] = useState(false);
   const handleWhatsappChat = () => {
     const clientPhoneNumber = client.phone;
-    const whatsappUrl = `https://wa.me/${clientPhoneNumber}`;
+    const whatsappUrl = `https://wa.me/62${clientPhoneNumber?.substring(1)}`;
     window.open(whatsappUrl, "_blank");
   };
 

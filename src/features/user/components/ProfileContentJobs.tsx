@@ -158,7 +158,7 @@ const ProfileContentJobs = ({ sessionUser }: ProfileContentJobsProps) => {
         ) : jobs.length > 0 ? (
           jobs.map((item) => (
             <JobItem
-              key={"job" in item ? item.assignmentId : item.id}
+              key={"job" in item ? item?.assignmentId : item.id}
               item={item}
               canEditStatus={isOwnProfile && isClient}
               isOwnProfile={isOwnProfile}
@@ -198,8 +198,6 @@ const JobItem = ({
   canEditStatus: boolean;
   isOwnProfile: boolean;
 }) => {
-  console.log("item: ", item);
-
   const isWorkerAssignment = (value: JobAssignment | WorkerAssignment): value is WorkerAssignment =>
     "job" in value;
 
@@ -207,10 +205,10 @@ const JobItem = ({
   const clientJob = !isWorkerAssignment(item) ? item : null;
   const assignmentIds = isWorkerAssignment(item)
     ? [item.assignmentId]
-    : item.assignments.map((assignment) => assignment.assignmentId);
+    : item?.assignments?.map((assignment) => assignment.assignmentId);
   const hasReviewed = isWorkerAssignment(item)
     ? item.hasReviewed
-    : item.assignments.every((assignment) => assignment.hasReviewed);
+    : item?.assignments?.every((assignment) => assignment.hasReviewed);
   const [dialogData, setDialogData] = useState<
     | { type: "detail" | "rating"; job: JobSummary; assignmentId?: string }
     | { type: "edit" | "delete"; job: JobAssignment }
@@ -226,7 +224,9 @@ const JobItem = ({
       ? "professional"
       : job.status === "completed"
         ? "success"
-        : "error";
+        : job.status === "in_progress"
+          ? "warning"
+          : "destructive";
   const statusLabel =
     job.status === "open"
       ? "Dibuka"
