@@ -8,36 +8,129 @@ import {
   DialogTitle,
 } from "@/shared/components/ui/dialog";
 import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-links";
-import type { JobAssignment } from "@/shared/types/entity.type";
+import type { JobAssignment, Profile, User } from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
 import { useState } from "react";
+import { useParams } from "react-router";
+import { useMeJobs } from "../hooks/clientHooks";
+import { useMeAssignments } from "../hooks/workerHooks";
+import {
+  useUserAssignments,
+  useUserById,
+  useUserJobs,
+} from "../hooks/userHooks";
 import DialogJobRate from "./DialogJobRate";
 import { JobItemSkeleton } from "./skeleton/JobItemSkeleton";
 type ProfileContentJobsProps = {
-  jobs: JobAssignment[];
-  isLoading: boolean;
-  isError: boolean;
-  errorMessage: string;
-  totalCount?: number;
-  emptyMessage: string;
-  page: number;
-  limit: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (limit: number) => void;
+  sessionUser: User | null;
+  sessionProfile: Profile | null;
 };
 
-const ProfileContentJobs = ({
-  jobs,
-  isLoading,
-  isError,
-  errorMessage,
-  totalCount,
-  emptyMessage,
-  page,
-  limit,
-  onPageChange,
-  onPageSizeChange,
-}: ProfileContentJobsProps) => {
+const ProfileContentJobs = ({ sessionUser }: ProfileContentJobsProps) => {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const { userId } = useParams();
+  const isOwnProfile = !userId || userId === sessionUser?.id;
+  const {
+    data: viewedUserData,
+    isLoading: isViewedUserLoading,
+    isError: isViewedUserError,
+    error: viewedUserError,
+  } = useUserById(userId || "", !isOwnProfile);
+  const targetUser = isOwnProfile ? sessionUser : viewedUserData?.user;
+  const targetRole = targetUser?.role;
+
+  const {
+    data: clientData,
+    isLoading: isLoadingJobs,
+    isError: isClientJobsError,
+    error: clientJobsError,
+  } = useMeJobs({ page, limit });
+  const dataJobs = (clientData?.data ?? []) as JobAssignment[];
+
+  const {
+    data: workerData,
+    isLoading: isLoadingAssignments,
+    isError: isWorkerJobsError,
+    error: workerJobsError,
+  } = useMeAssignments(page, limit);
+  const dataAssignments = (workerData?.data ?? []) as JobAssignment[];
+
+  const {
+    data: userJobsData,
+    isLoading: isUserJobsLoading,
+    isError: isUserJobsError,
+    error: userJobsError,
+  } = useUserJobs({
+    userId: userId || "",
+    page,
+    limit,
+    enabled: !isOwnProfile && targetRole === "client",
+  });
+  const dataUserJobs = (userJobsData?.data ?? []) as JobAssignment[];
+
+  const {
+    data: userAssignmentsData,
+    isLoading: isUserAssignmentsLoading,
+    isError: isUserAssignmentsError,
+    error: userAssignmentsError,
+  } = useUserAssignments({
+    userId: userId || "",
+    page,
+    limit,
+    enabled: !isOwnProfile && targetRole === "worker",
+  });
+  const dataUserAssignments = (userAssignmentsData?.data ??
+    []) as JobAssignment[];
+
+  const isClient = targetRole === "client";
+  const jobs = isClient
+    ? isOwnProfile
+      ? dataJobs
+      : dataUserJobs
+    : isOwnProfile
+      ? dataAssignments
+      : dataUserAssignments;
+  const isLoading = isOwnProfile
+    ? isClient
+      ? isLoadingJobs
+      : isLoadingAssignments
+    : isViewedUserLoading ||
+      (isClient ? isUserJobsLoading : isUserAssignmentsLoading);
+  const isError = isOwnProfile
+    ? isClient
+      ? isClientJobsError
+      : isWorkerJobsError
+    : isViewedUserError ||
+      (isClient ? isUserJobsError : isUserAssignmentsError);
+  const errorMessage = isOwnProfile
+    ? isClient
+      ? clientJobsError instanceof Error
+        ? clientJobsError.message
+        : "Terjadi kesalahan saat memuat pekerjaan."
+      : workerJobsError instanceof Error
+        ? workerJobsError.message
+        : "Terjadi kesalahan saat memuat pekerjaan."
+    : viewedUserError instanceof Error
+      ? viewedUserError.message
+      : isClient
+        ? userJobsError instanceof Error
+          ? userJobsError.message
+          : "Terjadi kesalahan saat memuat pekerjaan."
+        : userAssignmentsError instanceof Error
+          ? userAssignmentsError.message
+          : "Terjadi kesalahan saat memuat pekerjaan.";
+  const totalCount = isOwnProfile
+    ? isClient
+      ? clientData?.meta?.total
+      : workerData?.meta?.total
+    : isClient
+      ? userJobsData?.meta?.total
+      : userAssignmentsData?.meta?.total;
+  const emptyMessage = isClient
+    ? "Belum ada pekerjaan yang dibuat."
+    : "Belum ada pekerjaan yang dikerjakan.";
+
   return (
     <>
       <div className="w-full flex flex-col gap-2">
@@ -64,8 +157,11 @@ const ProfileContentJobs = ({
           page={page}
           pageSize={limit}
           totalCount={totalCount}
-          onPageChange={onPageChange}
-          onPageSizeChange={onPageSizeChange}
+          onPageChange={setPage}
+          onPageSizeChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
         />
       )}
     </>

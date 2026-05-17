@@ -1,38 +1,69 @@
 import { Badge } from "@/shared/components/ui/badge";
 import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-links";
-import type { Review } from "@/shared/types/entity.type";
+import type { Profile, Review, User } from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
-import type { CategoryRating } from "../types";
+import { useState } from "react";
+import { useParams } from "react-router";
+import type { CategoryRating, WorkerProfile } from "../types";
 import { useIsMobile } from "@/shared/hooks/useAnimation";
 import ReviewItemSkeleton from "./skeleton/ReviewItemSkeleton";
+import { useMeReviews, useUserById, useUserReviews } from "../hooks/userHooks";
 
 type ProfileContentReviewsProps = {
-  isWorker: boolean;
-  categoryRatings: CategoryRating[];
-  reviews: Review[];
-  isPending: boolean;
-  isError: boolean;
-  error: unknown;
-  totalCount?: number;
-  page: number;
-  limit: number;
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (limit: number) => void;
+  sessionUser: User | null;
+  sessionProfile: Profile | null;
 };
 
 const ProfileContentReviews = ({
-  isWorker,
-  categoryRatings,
-  reviews,
-  isPending,
-  isError,
-  error,
-  totalCount,
-  page,
-  limit,
-  onPageChange,
-  onPageSizeChange,
+  sessionUser,
+  sessionProfile,
 }: ProfileContentReviewsProps) => {
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const { userId } = useParams();
+  const isOwnProfile = !userId || userId === sessionUser?.id;
+  const {
+    data: viewedUserData,
+    isLoading: isViewedUserLoading,
+    isError: isViewedUserError,
+    error: viewedUserError,
+  } = useUserById(userId || "", !isOwnProfile);
+  const targetUser = isOwnProfile ? sessionUser : viewedUserData?.user;
+  const targetProfile = isOwnProfile ? sessionProfile : viewedUserData?.profile;
+
+  const {
+    data: meReviewsData,
+    isPending: isMeReviewsPending,
+    isError: isMeReviewsError,
+    error: meReviewsError,
+  } = useMeReviews(page, limit);
+  const userIdForReviews = isOwnProfile ? "" : userId || "";
+  const {
+    data: userReviewsData,
+    isPending: isUserReviewsPending,
+    isError: isUserReviewsError,
+    error: userReviewsError,
+  } = useUserReviews(userIdForReviews, page, limit);
+
+  const reviews = ((isOwnProfile
+    ? meReviewsData?.data
+    : userReviewsData?.data) ?? []) as Review[];
+  const workerProfile = targetProfile as WorkerProfile | null;
+  const categoryRatings: CategoryRating[] =
+    workerProfile?.categoryRatings ?? [];
+  const isWorker = targetUser?.role === "worker";
+  const isPending = isOwnProfile
+    ? isMeReviewsPending
+    : isViewedUserLoading || isUserReviewsPending;
+  const isError = isOwnProfile
+    ? isMeReviewsError
+    : isViewedUserError || isUserReviewsError;
+  const error = isOwnProfile
+    ? meReviewsError
+    : userReviewsError || viewedUserError;
+  const totalCount = isOwnProfile
+    ? meReviewsData?.meta?.total
+    : userReviewsData?.meta?.total;
   return (
     <>
       {isWorker && categoryRatings.length > 0 && (
@@ -86,8 +117,11 @@ const ProfileContentReviews = ({
           page={page}
           pageSize={limit}
           totalCount={totalCount}
-          onPageChange={onPageChange}
-          onPageSizeChange={onPageSizeChange}
+          onPageChange={setPage}
+          onPageSizeChange={(newLimit) => {
+            setLimit(newLimit);
+            setPage(1);
+          }}
         />
       )}
     </>
