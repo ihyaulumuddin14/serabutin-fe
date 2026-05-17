@@ -2,29 +2,40 @@ import { Badge } from "@/shared/components/ui/badge";
 import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-links";
 import type { Review } from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
-import { useState } from "react";
-import { useMe, useMeReviews } from "../hooks/userHooks";
-import type { WorkerProfile } from "../types";
+import type { CategoryRating } from "../types";
 import { useIsMobile } from "@/shared/hooks/useAnimation";
 import ReviewItemSkeleton from "./skeleton/ReviewItemSkeleton";
 
-const ProfileContentReviews = () => {
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const {
-    data,
-    isPending: isReviewsPending,
-    isError: isReviewsError,
-    error: reviewsError,
-  } = useMeReviews(page, limit);
-  const { user, profile } = useMe();
-  const dataReviews = (data?.data ?? []) as Review[];
-  const workerProfile = profile as WorkerProfile | null;
-  const categoryRatings = workerProfile?.categoryRatings ?? [];
+type ProfileContentReviewsProps = {
+  isWorker: boolean;
+  categoryRatings: CategoryRating[];
+  reviews: Review[];
+  isPending: boolean;
+  isError: boolean;
+  error: unknown;
+  totalCount?: number;
+  page: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (limit: number) => void;
+};
 
+const ProfileContentReviews = ({
+  isWorker,
+  categoryRatings,
+  reviews,
+  isPending,
+  isError,
+  error,
+  totalCount,
+  page,
+  limit,
+  onPageChange,
+  onPageSizeChange,
+}: ProfileContentReviewsProps) => {
   return (
     <>
-      {user?.role === "worker" && categoryRatings.length > 0 && (
+      {isWorker && categoryRatings.length > 0 && (
         <div className="w-full overflow-x-auto snap-mandatory snap-x scroll-smooth">
           <ul className="min-w-fit flex gap-4 items-start justify-start py-1 snap-">
             {categoryRatings.map((item) => (
@@ -40,16 +51,16 @@ const ProfileContentReviews = () => {
 
       {/* review list */}
       <div className="w-full flex flex-col gap-2">
-        {isReviewsPending ? (
+        {isPending ? (
           [...Array(2)].map((_, i) => <ReviewItemSkeleton key={i} />)
-        ) : isReviewsError ? (
+        ) : isError ? (
           <p className="text-center text-sm text-destructive">
-            {reviewsError instanceof Error
-              ? reviewsError.message
+            {error instanceof Error
+              ? error.message
               : "Terjadi kesalahan saat memuat ulasan."}
           </p>
-        ) : dataReviews.length > 0 ? (
-          dataReviews.map((item) => {
+        ) : reviews.length > 0 ? (
+          reviews.map((item) => {
             const initials = item.reviewer.fullName
               .split(" ")
               .map((n: string) => n[0])
@@ -70,16 +81,13 @@ const ProfileContentReviews = () => {
         )}
       </div>
 
-      {!!data?.meta?.total && (
+      {!!totalCount && (
         <PaginationWithLinks
           page={page}
           pageSize={limit}
-          totalCount={data.meta.total}
-          onPageChange={setPage}
-          onPageSizeChange={(newLimit) => {
-            setLimit(newLimit);
-            setPage(1);
-          }}
+          totalCount={totalCount}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
         />
       )}
     </>

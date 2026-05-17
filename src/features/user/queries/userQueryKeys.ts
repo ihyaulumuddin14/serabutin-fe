@@ -21,6 +21,10 @@ export const userKeys = {
   all: ["user"] as const,
   me: () => [...userKeys.all, "me"] as const,
   detail: (userId: string) => [...userKeys.all, "detail", userId] as const,
+  jobs: (userId: string, params: JobListParams) =>
+    [...userKeys.all, "jobs", userId, params] as const,
+  assignments: (userId: string, params: JobListParams) =>
+    [...userKeys.all, "assignments", userId, params] as const,
   reviews: (userId: string, page: number, limit: number) =>
     [...userKeys.all, "reviews", userId, page, limit] as const,
   meReviews: (page: number, limit: number) =>

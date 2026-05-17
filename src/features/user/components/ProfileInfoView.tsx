@@ -1,19 +1,21 @@
 import { Badge } from "@/shared/components/ui/badge";
-import { useMe } from "../hooks/userHooks";
-import { Icon } from "@iconify-icon/react";
 import { Button } from "@/shared/components/ui/button";
+import type { Profile, User } from "@/shared/types/entity.type";
+import { Icon } from "@iconify-icon/react";
 
 export const ProfileInfoView = ({
   avatarContent,
   isOwnProfile,
   setIsEditing,
+  user,
+  profile,
 }: {
   avatarContent: React.ReactNode;
   isOwnProfile: boolean;
   setIsEditing: (isEditing: boolean) => void;
+  user?: User,
+  profile?: Profile
 }) => {
-  const { user, profile } = useMe();
-
   return (
     <>
       {/* avatar */}

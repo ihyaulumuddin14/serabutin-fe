@@ -1,44 +1,37 @@
 import { useMemo, useState } from "react";
-import { useMe } from "../hooks/userHooks";
+import { useMe, useUserById } from "../hooks/userHooks";
 import { useParams } from "react-router";
 import { ProfileInfoView } from "./ProfileInfoView";
 import { ProfileInfoEdit } from "./ProfileInfoEdit";
 import ProfileInfoSkeleton from "./skeleton/ProfileInfoSkeleton";
+import type { Profile, User } from "@/shared/types/entity.type";
 
 const ProfileInfo = () => {
   const { userId } = useParams();
-  const { user, profile, isLoading, isError, error } = useMe();
-  const initials = useMemo(() => {
-    return user
-      ? user.fullName
-          .split(" ")
-          .map((n, i) => (i < 2 ? n[0] : ""))
-          .join("")
-      : "";
-  }, [user]);
+  const { user, profile, isLoading } = useMe();
+  const { data } = useUserById(userId || user?.id || "")
   const isOwnProfile = !userId || userId === user?.id;
   const [isEditing, setIsEditing] = useState(false);
+
+  const finalProfile = isOwnProfile ? profile : data?.profile;
+  const finalUser = isOwnProfile ? user : data?.user;
+  const initials = useMemo(() => {
+    return finalUser
+    ? finalUser.fullName
+    .split(" ")
+    .map((n, i) => (i < 2 ? n[0] : ""))
+    .join("")
+    : "";
+  }, [finalUser]);
 
   if (isLoading) {
     return <ProfileInfoSkeleton />;
   }
 
-  if (isError) {
-    return (
-      <div className="w-full h-fit bg-card flex items-center justify-center p-4 sm:p-6 shadow-md rounded-[14px]">
-        <p className="text-sm text-destructive">
-          {error instanceof Error
-            ? error.message
-            : "Terjadi kesalahan saat memuat profil."}
-        </p>
-      </div>
-    );
-  }
-
-  const avatarContent = profile?.avatarUrl ? (
+  const avatarContent = (finalProfile && "avatarUrl" in finalProfile && finalProfile.avatarUrl) ? (
     <div className="w-24 h-24 rounded-full overflow-hidden">
       <img
-        src={profile.avatarUrl}
+        src={finalProfile.avatarUrl}
         alt="avatar image"
         className="w-full h-full object-cover object-center"
       />
@@ -60,6 +53,8 @@ const ProfileInfo = () => {
           setIsEditing={setIsEditing}
           avatarContent={avatarContent}
           isOwnProfile={isOwnProfile}
+          user={finalUser as User}
+          profile={finalProfile as Profile}
         />
       )}
     </div>

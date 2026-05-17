@@ -1,7 +1,12 @@
 import { privateApi } from "@/shared/api/axiosInstance";
 import { toCamel, toSnake } from "@/shared/lib/case";
 import type { ApiResponse, MetaPagination } from "@/shared/types/common.type";
-import type { Profile, Review, User } from "@/shared/types/entity.type";
+import type {
+  JobAssignment,
+  Profile,
+  Review,
+  User,
+} from "@/shared/types/entity.type";
 import type { ReviewCredentials } from "../schemas/reviewSchemas";
 import { type EditProfileSchema } from "../schemas/userSchemas";
 import type { WorkerProfile } from "../types";
@@ -56,6 +61,68 @@ export const getMeReviews = async (page: number, limit: number) => {
 
   const data = ensureSuccess(response, "Gagal mengambil data ulasan");
   return toCamel(data) as ApiResponse<Review[]> & {
+    meta: MetaPagination;
+  };
+};
+
+export const getUserReviews = async (
+  userId: string,
+  page: number,
+  limit: number,
+) => {
+  const response = await privateApi.get(`/users/${userId}/reviews`, {
+    params: {
+      page,
+      limit,
+    },
+  });
+
+  const data = ensureSuccess(response, "Gagal mengambil data ulasan");
+  return toCamel(data) as ApiResponse<Review[]> & {
+    meta: MetaPagination;
+  };
+};
+
+export const getUserJobs = async (
+  userId: string,
+  page: number = 1,
+  limit: number = 10,
+  categorySlug?: string,
+  status?: string,
+) => {
+  const response = await privateApi.get(`/users/${userId}/jobs`, {
+    params: {
+      page,
+      limit,
+      categorySlug,
+      status,
+    },
+  });
+
+  const data = ensureSuccess(response, "Gagal mengambil data pekerjaan");
+  return toCamel(data) as ApiResponse<JobAssignment[]> & {
+    meta: MetaPagination;
+  };
+};
+
+export const getUserAssignments = async (
+  userId: string,
+  page: number = 1,
+  limit: number = 10,
+  categorySlug?: string,
+  status?: string,
+) => {
+  const response = await privateApi.get(`/users/${userId}/assignments`, {
+    params: {
+      page,
+      limit,
+      categorySlug,
+      status,
+    },
+  });
+
+  const data = ensureSuccess(response, "Gagal mengambil data pekerjaan");
+  return toCamel(data) as ApiResponse<JobAssignment[]> & {
     meta: MetaPagination;
   };
 };

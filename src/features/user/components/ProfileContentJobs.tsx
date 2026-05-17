@@ -11,54 +11,33 @@ import { PaginationWithLinks } from "@/shared/components/ui/pagination-with-link
 import type { JobAssignment } from "@/shared/types/entity.type";
 import { Icon } from "@iconify-icon/react";
 import { useState } from "react";
-import { useMeJobs } from "../hooks/clientHooks";
-import { useMeAssignments } from "../hooks/workerHooks";
-import { useMe } from "../hooks/userHooks";
 import DialogJobRate from "./DialogJobRate";
 import { JobItemSkeleton } from "./skeleton/JobItemSkeleton";
+type ProfileContentJobsProps = {
+  jobs: JobAssignment[];
+  isLoading: boolean;
+  isError: boolean;
+  errorMessage: string;
+  totalCount?: number;
+  emptyMessage: string;
+  page: number;
+  limit: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (limit: number) => void;
+};
 
-const ProfileContentJobs = () => {
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const { user } = useMe();
-
-  // for client
-  const {
-    data: clientData,
-    isLoading: isLoadingJobs,
-    isError: isClientJobsError,
-    error: clientJobsError,
-  } = useMeJobs({ page, limit });
-  const dataJobs = (clientData?.data ?? []) as JobAssignment[];
-
-  // for worker
-  const {
-    data: workerData,
-    isLoading: isLoadingAssignments,
-    isError: isWorkerJobsError,
-    error: workerJobsError,
-  } = useMeAssignments(page, limit);
-  const dataAssignments = (workerData?.data ?? []) as JobAssignment[];
-
-  // determine active data based on user role
-  const isClient = user?.role === "client";
-  const activeData = isClient ? dataJobs : dataAssignments;
-  const isLoading = isClient ? isLoadingJobs : isLoadingAssignments;
-  const isError = isClient ? isClientJobsError : isWorkerJobsError;
-  const errorMessage = isClient
-    ? clientJobsError instanceof Error
-      ? clientJobsError.message
-      : "Terjadi kesalahan saat memuat pekerjaan."
-    : workerJobsError instanceof Error
-      ? workerJobsError.message
-      : "Terjadi kesalahan saat memuat pekerjaan.";
-  const totalCount = isClient
-    ? clientData?.meta?.total
-    : workerData?.meta?.total;
-  const emptyMessage = isClient
-    ? "Anda belum membuat pekerjaan apapun."
-    : "Anda belum mengerjakan pekerjaan apapun.";
-
+const ProfileContentJobs = ({
+  jobs,
+  isLoading,
+  isError,
+  errorMessage,
+  totalCount,
+  emptyMessage,
+  page,
+  limit,
+  onPageChange,
+  onPageSizeChange,
+}: ProfileContentJobsProps) => {
   return (
     <>
       <div className="w-full flex flex-col gap-2">
@@ -66,8 +45,8 @@ const ProfileContentJobs = () => {
           [...Array(2)].map((_, i) => <JobItemSkeleton key={i} />)
         ) : isError ? (
           <p className="text-center text-sm text-destructive">{errorMessage}</p>
-        ) : activeData.length > 0 ? (
-          activeData.map((item) => (
+        ) : jobs.length > 0 ? (
+          jobs.map((item) => (
             <JobItem
               key={item.id}
               job={item}
@@ -85,11 +64,8 @@ const ProfileContentJobs = () => {
           page={page}
           pageSize={limit}
           totalCount={totalCount}
-          onPageChange={setPage}
-          onPageSizeChange={(newLimit) => {
-            setLimit(newLimit);
-            setPage(1);
-          }}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
         />
       )}
     </>
@@ -107,10 +83,10 @@ const JobItem = ({ job }: { job: JobAssignment }) => {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const statusVariant =
     job.status === "open"
-      ? "error"
+      ? "success"
       : job.status === "in_progress"
         ? "warning"
-        : "success";
+        : "error";
   const statusLabel =
     job.status === "open"
       ? "Dibuka"

@@ -12,6 +12,9 @@ import {
   getMe,
   getMeReviews,
   getReviewsByUserId,
+  getUserAssignments,
+  getUserJobs,
+  getUserReviews,
   getUserById,
   sendReview,
   updateProfile,
@@ -88,6 +91,68 @@ export const useMeReviews = (page: number = 1, limit: number = 10) => {
   });
 };
 
+export const useUserReviews = (
+  userId: string,
+  page: number = 1,
+  limit: number = 10,
+) => {
+  return useQuery({
+    queryKey: userKeys.reviews(userId, page, limit),
+    queryFn: () => getUserReviews(userId, page, limit),
+    enabled: !!userId,
+    placeholderData: keepPreviousData,
+  });
+};
+
+export const useUserJobs = ({
+  userId,
+  page = 1,
+  limit = 10,
+  categorySlug,
+  status,
+  enabled = true,
+}: {
+  userId: string;
+  page?: number;
+  limit?: number;
+  categorySlug?: string;
+  status?: string;
+  enabled?: boolean;
+}) => {
+  const params = { page, limit, categorySlug, status };
+
+  return useQuery({
+    queryKey: userKeys.jobs(userId, params),
+    queryFn: () => getUserJobs(userId, page, limit, categorySlug, status),
+    enabled: !!userId && enabled,
+  });
+};
+
+export const useUserAssignments = ({
+  userId,
+  page = 1,
+  limit = 10,
+  categorySlug,
+  status,
+  enabled = true,
+}: {
+  userId: string;
+  page?: number;
+  limit?: number;
+  categorySlug?: string;
+  status?: string;
+  enabled?: boolean;
+}) => {
+  const params = { page, limit, categorySlug, status };
+
+  return useQuery({
+    queryKey: userKeys.assignments(userId, params),
+    queryFn: () =>
+      getUserAssignments(userId, page, limit, categorySlug, status),
+    enabled: !!userId && enabled,
+  });
+};
+
 export const useSubmitJobReviews = () => {
   return useMutation({
     mutationFn: async (params: { jobId: string; drafts: ReviewDraft[] }) => {
@@ -108,10 +173,11 @@ export const useSubmitJobReviews = () => {
   });
 };
 
-export const useUserById = (userId: string) => {
+export const useUserById = (userId: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: userKeys.detail(userId),
     queryFn: () => getUserById(userId),
     staleTime: 5 * 60 * 1000,
+    enabled: !!userId && enabled,
   });
 };
