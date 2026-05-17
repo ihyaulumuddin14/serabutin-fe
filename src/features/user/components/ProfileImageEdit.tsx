@@ -12,6 +12,7 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Button } from "@/shared/components/ui/button";
 import { FileUpload } from "@/components/ui/file-upload";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/components/ui/tooltip";
 
 const ProfileImageEdit = () => {
   const { profile, user } = useMe();
@@ -77,17 +78,24 @@ const ProfileImageEdit = () => {
   return (
     <div className="w-fit flex flex-col items-center relative">
       {avatarContent}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="cursor-pointer hover:bg-primary active:scale-95 absolute z-1 right-2.5 bottom-0 bg-ring rounded-full p-1.5 aspect-square flex justify-center items-center"
-      >
-        <Icon
-          icon="akar-icons:pencil"
-          width="1em"
-          height="1em"
-          style={{ color: "#FFFFFF" }}
-        />
-      </button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => setIsOpen(true)}
+            className="cursor-pointer hover:bg-primary active:scale-95 absolute z-1 right-2.5 bottom-0 bg-ring rounded-full p-1.5 aspect-square flex justify-center items-center"
+          >
+            <Icon
+              icon="akar-icons:pencil"
+              width="1em"
+              height="1em"
+              style={{ color: "#FFFFFF" }}
+            />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="text-sm">Ganti Foto Profil</p>
+        </TooltipContent>
+      </Tooltip>
 
       <Dialog
         open={isOpen}
